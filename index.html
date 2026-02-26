@@ -13,7 +13,7 @@
       --ror-blue:   #003087;
       --ror-green:  #00A651;
       --ror-teal:   #007B5E;
-      --ror-sky:    #E8F4FD;
+      --ror-sky:    #E8F4FD
       --ror-mint:   #E6F7EE;
       --ror-gold:   #F5A623;
       --white:      #FFFFFF;
@@ -696,7 +696,7 @@
       <div class="config-notice" id="config-notice">
         <strong>⚙️ Setup required:</strong> This site uses <a href="https://emailjs.com" target="_blank" style="color:#F5A623">EmailJS</a> (free) to send emails.
         Replace <code>YOUR_EMAILJS_PUBLIC_KEY</code>, <code>YOUR_SERVICE_ID</code>, and <code>YOUR_TEMPLATE_ID</code>
-        near the bottom of this file with your EmailJS credentials. Also replace <code>YOUR_GOOGLE_CIVIC_API_KEY</code>
+        near the bottom of this file with your EmailJS credentials. Also replace <code>AIzaSyDjUCvqx9DSxIn-t85KY5vEvTPHBk92UIY</code>
         with a free key from <a href="https://console.cloud.google.com" target="_blank" style="color:#F5A623">Google Cloud Console</a>
         (enable "Civic Information API").
         <a href="#" onclick="document.getElementById('config-notice').style.display='none';return false;" style="float:right;color:#F5A623;font-weight:700;">✕</a>
@@ -794,7 +794,7 @@ const CONFIG = {
   EMAILJS_PUBLIC_KEY:  'YOUR_EMAILJS_PUBLIC_KEY',   // from EmailJS dashboard
   EMAILJS_SERVICE_ID:  'YOUR_SERVICE_ID',           // e.g. 'service_abc123'
   EMAILJS_TEMPLATE_ID: 'YOUR_TEMPLATE_ID',          // e.g. 'template_xyz789'
-  GOOGLE_CIVIC_KEY:    'YOUR_GOOGLE_CIVIC_API_KEY', // from Google Cloud Console
+  GOOGLE_CIVIC_KEY:    'AIzaSyDjUCvqx9DSxIn-t85KY5vEvTPHBk92UIY', // from Google Cloud Console
 };
 
 // ─────────────────────────────────────────────
@@ -823,7 +823,7 @@ async function lookupLegislators() {
   document.getElementById('email-preview').style.display = 'none';
   document.getElementById('send-btn').disabled = true;
 
-  if (CONFIG.GOOGLE_CIVIC_KEY === 'YOUR_GOOGLE_CIVIC_API_KEY') {
+  if (CONFIG.GOOGLE_CIVIC_KEY === 'AIzaSyDjUCvqx9DSxIn-t85KY5vEvTPHBk92UIY') {
     // DEMO MODE: simulate a result so you can see the UI
     await new Promise(r => setTimeout(r, 800));
     legislators = {
