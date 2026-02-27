@@ -743,9 +743,6 @@
         </div>
 
         <div class="form-actions">
-          <button type="button" class="action-btn preview-btn" id="preview-btn" onclick="showPreview()">
-            👁 See a preview of my message
-          </button>
           <button type="submit" class="action-btn send-btn" id="send-btn" disabled>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -1156,30 +1153,6 @@ function buildEmailPreview() {
   });
 });
 
-function showPreview() {
-  const firstName = document.getElementById('first-name').value.trim();
-  const lastName  = document.getElementById('last-name').value.trim();
-  const street   = document.getElementById('street-address').value.trim();
-  const zip      = document.getElementById('zip-code').value.trim().replace(/\D/g, '');
-
-  if (!firstName || !lastName) {
-    showStatus('lookup-status', 'error', '❌ Please enter your first and last name.');
-    return;
-  }
-  if (!street || zip.length < 5) {
-    showStatus('lookup-status', 'error', '❌ Please enter your street address and zip code, then verify your address.');
-    return;
-  }
-
-  if (legislators.assembly || legislators.senate) {
-    buildEmailPreview();
-    document.getElementById('email-preview').style.display = 'block';
-    document.getElementById('email-preview').scrollIntoView({ behavior: 'smooth' });
-  } else {
-    verifyAddress();
-  }
-}
-
 // ─────────────────────────────────────────────
 // FORM SUBMIT
 // ─────────────────────────────────────────────
@@ -1209,7 +1182,7 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
   const legs        = [legislators.assembly, legislators.senate].filter(Boolean);
   const emailBody   = buildEmailBody(senderName, legs);
   let recipients    = [legislators.assembly?.email, legislators.senate?.email].filter(Boolean).join(', ');
-  let legNamesStr   = legNames.join(' and ');
+  let legNamesStr   = legs.map(l => l.name).join(' and ');
 
   // Test mode: add ?test=1 to URL and set CONFIG.TEST_EMAIL to send to yourself instead of legislators
   if (window.location.search.includes('test=1') && CONFIG.TEST_EMAIL) {
