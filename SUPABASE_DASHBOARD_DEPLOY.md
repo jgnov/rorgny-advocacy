@@ -1,3 +1,22 @@
+# Deploy Admin Edge Function via Dashboard (no CLI)
+
+Use this if the Supabase CLI is killed or won't run on your Mac.
+
+## Step 1: Add ADMIN_SECRET
+
+1. Open [Supabase Dashboard](https://supabase.com/dashboard) → your project
+2. Go to **Edge Functions** (left sidebar) → **Secrets**
+3. Add secret: Key = `ADMIN_SECRET`, Value = your admin password (e.g. `rorgnyrocks`)
+4. Save
+
+## Step 2: Create the Function
+
+1. In **Edge Functions**, click **Deploy a new function**
+2. Choose **Via Editor**
+3. Name it: `admin-sends`
+4. Replace the template code with this:
+
+```typescript
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
@@ -57,3 +76,15 @@ Deno.serve(async (req) => {
     );
   }
 });
+```
+
+5. Click **Deploy function**
+
+The admin panel sends the Supabase anon key in the Authorization header, which satisfies the gateway.
+
+## Done
+
+Your function is live at:
+`https://iqkpbuetqfwmmiuwmslt.supabase.co/functions/v1/admin-sends`
+
+The admin panel will use it automatically if `SUPABASE_URL` and `SUPABASE_ANON_KEY` are set.

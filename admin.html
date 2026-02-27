@@ -293,7 +293,9 @@
         if (res.ok) {
           return await res.json();
         }
+        const errBody = await res.json().catch(() => ({}));
         if (res.status === 401) return null;
+        return { serverError: errBody.error || 'Server error (' + res.status + ')' };
       } catch (e) {}
     }
     return JSON.parse(localStorage.getItem('ror_sends') || '[]');
@@ -316,6 +318,11 @@
     const data = await loadData(pw);
     if (data === null) {
       errEl.textContent = 'Incorrect password.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    if (data && data.serverError) {
+      errEl.textContent = data.serverError;
       errEl.classList.remove('hidden');
       return;
     }
@@ -347,7 +354,7 @@
       document.getElementById('dashboard').classList.remove('hidden');
       document.getElementById('logout-wrap').classList.remove('hidden');
       loadData(storedPw).then(function(data) {
-        if (data === null) {
+        if (data === null || (data && data.serverError)) {
           clearSession();
           location.reload();
         } else {
