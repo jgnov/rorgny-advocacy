@@ -18,10 +18,14 @@ const ENV_VARS = [
   'EMAILJS_PUBLIC_KEY',
   'EMAILJS_SERVICE_ID',
   'EMAILJS_TEMPLATE_ID',
+  'SUPABASE_URL',
+  'SUPABASE_ANON_KEY',
+  'ADMIN_SECRET',
 ];
 
 const root = path.join(__dirname);
 const templatePath = path.join(root, 'index.html');
+const adminPath = path.join(root, 'admin.html');
 const distDir = path.join(root, 'dist');
 
 if (!fs.existsSync(templatePath)) {
@@ -35,21 +39,33 @@ const DEFAULTS = {
   EMAILJS_PUBLIC_KEY: 'YOUR_EMAILJS_PUBLIC_KEY',
   EMAILJS_SERVICE_ID: 'YOUR_SERVICE_ID',
   EMAILJS_TEMPLATE_ID: 'YOUR_TEMPLATE_ID',
+  SUPABASE_URL: '',
+  SUPABASE_ANON_KEY: '',
+  ADMIN_SECRET: '',
 };
 const replacements = {};
 for (const key of ENV_VARS) {
   replacements[`__${key}__`] = process.env[key] || DEFAULTS[key] || '';
 }
 
-let html = fs.readFileSync(templatePath, 'utf8');
-for (const [placeholder, value] of Object.entries(replacements)) {
-  html = html.split(placeholder).join(value);
+function injectEnv(html) {
+  let out = html;
+  for (const [placeholder, value] of Object.entries(replacements)) {
+    out = out.split(placeholder).join(value);
+  }
+  return out;
 }
+
+let indexHtml = fs.readFileSync(templatePath, 'utf8');
+indexHtml = injectEnv(indexHtml);
+
+let adminHtml = fs.readFileSync(adminPath, 'utf8');
+adminHtml = injectEnv(adminHtml);
 
 if (!fs.existsSync(distDir)) fs.mkdirSync(distDir, { recursive: true });
 
-fs.writeFileSync(path.join(distDir, 'index.html'), html);
+fs.writeFileSync(path.join(distDir, 'index.html'), indexHtml);
+fs.writeFileSync(path.join(distDir, 'admin.html'), adminHtml);
 fs.copyFileSync(path.join(root, 'CNAME'), path.join(distDir, 'CNAME'));
-fs.copyFileSync(path.join(root, 'admin.html'), path.join(distDir, 'admin.html'));
 
-console.log('Build complete: dist/index.html');
+console.log('Build complete: dist/index.html, dist/admin.html');

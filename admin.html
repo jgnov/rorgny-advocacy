@@ -10,7 +10,7 @@
   <style>
     :root {
       --ror-blue:   #003087;
-      --ror-green:  #00A651;
+      --ror-green:   #00A651;
       --ror-teal:   #007B5E;
       --ror-sky:    #E8F4FD;
       --near-black: #1A1A2E;
@@ -53,6 +53,41 @@
       font-weight: 600;
     }
     .admin-header a:hover { text-decoration: underline; }
+    .login-panel {
+      padding: 48px 32px;
+    }
+    .login-panel h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: var(--near-black);
+    }
+    .login-panel input {
+      width: 100%;
+      max-width: 320px;
+      padding: 12px 16px;
+      font-size: 16px;
+      font-family: inherit;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .login-panel button {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+      background: var(--ror-green);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .login-panel button:hover { opacity: 0.9; }
+    .login-error {
+      color: #dc2626;
+      font-size: 14px;
+      margin-top: 8px;
+    }
     .stats-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -115,6 +150,7 @@
       background: #F3F4F6;
       border-radius: 8px;
     }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -125,81 +161,152 @@
     <p><a href="index.html">← Back to campaign</a></p>
   </div>
 
-  <div class="stats-row">
-    <div class="stat-card">
-      <div class="number" id="total-count">0</div>
-      <div class="label">Total emails sent</div>
-    </div>
-    <div class="stat-card">
-      <div class="number" id="unique-senders">0</div>
-      <div class="label">Unique senders</div>
-    </div>
-    <div class="stat-card">
-      <div class="number" id="unique-recipients">0</div>
-      <div class="label">Unique recipients</div>
-    </div>
+  <div id="login-panel" class="login-panel">
+    <h2>Enter password to view admin</h2>
+    <input type="password" id="admin-password" placeholder="Password" autocomplete="current-password" />
+    <br />
+    <button type="button" id="login-btn">Log in</button>
+    <div id="login-error" class="login-error hidden"></div>
   </div>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Sent by</th>
-          <th>Email</th>
-          <th>To</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody id="sends-tbody">
-      </tbody>
-    </table>
-    <div class="empty-state" id="empty-state" style="display:none">
-      <div class="icon">📭</div>
-      <p>No emails sent yet. Data is stored in this browser when users send messages.</p>
+  <div id="dashboard" class="hidden">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="number" id="total-count">0</div>
+        <div class="label">Total emails sent</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="unique-senders">0</div>
+        <div class="label">Unique senders</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="unique-recipients">0</div>
+        <div class="label">Unique recipients</div>
+      </div>
     </div>
-    <p class="note">Note: This admin panel reads from this browser's local storage. For site-wide statistics across all visitors, a backend database would be required.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Sent by</th>
+            <th>Email</th>
+            <th>To</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="sends-tbody">
+        </tbody>
+      </table>
+      <div class="empty-state" id="empty-state" style="display:none">
+        <div class="icon">📭</div>
+        <p id="empty-msg">No emails sent yet.</p>
+      </div>
+      <p class="note">Data is stored in Supabase and synced when users send messages.</p>
+    </div>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function() {
-  const data = JSON.parse(localStorage.getItem('ror_sends') || '[]');
+  const CONFIG = {
+    SUPABASE_URL:   '__SUPABASE_URL__',
+    SUPABASE_ANON_KEY: '__SUPABASE_ANON_KEY__',
+    ADMIN_SECRET:  '__ADMIN_SECRET__',
+  };
 
-  document.getElementById('total-count').textContent = data.length;
+  const SESSION_KEY = 'ror_admin';
 
-  const senderEmails = new Set(data.map(d => d.email));
-  document.getElementById('unique-senders').textContent = senderEmails.size;
+  function isLoggedIn() {
+    return sessionStorage.getItem(SESSION_KEY) === '1';
+  }
 
-  const recipients = new Set();
-  data.forEach(d => {
-    (d.legislators || '').split(' and ').forEach(r => r.trim() && recipients.add(r.trim()));
-  });
-  document.getElementById('unique-recipients').textContent = recipients.size;
+  function setLoggedIn() {
+    sessionStorage.setItem(SESSION_KEY, '1');
+  }
 
-  const tbody = document.getElementById('sends-tbody');
-  const emptyState = document.getElementById('empty-state');
+  function renderDashboard(data) {
+    document.getElementById('total-count').textContent = data.length;
 
-  if (data.length === 0) {
-    tbody.innerHTML = '';
-    emptyState.style.display = 'block';
-  } else {
-    emptyState.style.display = 'none';
-    tbody.innerHTML = data.map((row, i) => `
-      <tr>
-        <td>${i + 1}</td>
-        <td>${escapeHtml(row.name || '—')}</td>
-        <td>${escapeHtml(row.email || '—')}</td>
-        <td>${escapeHtml(row.legislators || '—')}</td>
-        <td>${row.ts ? new Date(row.ts).toLocaleString() : '—'}</td>
-      </tr>
-    `).join('');
+    const senderEmails = new Set(data.map(d => d.email));
+    document.getElementById('unique-senders').textContent = senderEmails.size;
+
+    const recipients = new Set();
+    data.forEach(d => {
+      (d.legislators || '').split(' and ').forEach(r => r.trim() && recipients.add(r.trim()));
+    });
+    document.getElementById('unique-recipients').textContent = recipients.size;
+
+    const tbody = document.getElementById('sends-tbody');
+    const emptyState = document.getElementById('empty-state');
+
+    if (data.length === 0) {
+      tbody.innerHTML = '';
+      emptyState.style.display = 'block';
+      document.getElementById('empty-msg').textContent = 'No emails sent yet. Data syncs from Supabase when users send messages.';
+    } else {
+      emptyState.style.display = 'none';
+      tbody.innerHTML = data.map((row, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${escapeHtml(row.name || '—')}</td>
+          <td>${escapeHtml(row.email || '—')}</td>
+          <td>${escapeHtml(row.legislators || '—')}</td>
+          <td>${row.ts ? new Date(row.ts).toLocaleString() : '—'}</td>
+        </tr>
+      `).join('');
+    }
   }
 
   function escapeHtml(s) {
     const div = document.createElement('div');
     div.textContent = s;
     return div.innerHTML;
+  }
+
+  async function loadData() {
+    if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY) {
+      try {
+        const { createClient } = supabase;
+        const sb = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        const { data, error } = await sb.from('sends').select('*').order('ts', { ascending: false });
+        if (!error && data) return data;
+      } catch(e) {}
+    }
+    return JSON.parse(localStorage.getItem('ror_sends') || '[]');
+  }
+
+  document.getElementById('login-btn').addEventListener('click', async function() {
+    const pw = document.getElementById('admin-password').value;
+    const errEl = document.getElementById('login-error');
+    if (!CONFIG.ADMIN_SECRET) {
+      errEl.textContent = 'Admin not configured. Set ADMIN_SECRET in .env.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    if (pw !== CONFIG.ADMIN_SECRET) {
+      errEl.textContent = 'Incorrect password.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    errEl.classList.add('hidden');
+    setLoggedIn();
+    document.getElementById('login-panel').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    const data = await loadData();
+    renderDashboard(data);
+  });
+
+  document.getElementById('admin-password').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('login-btn').click();
+  });
+
+  if (isLoggedIn()) {
+    document.getElementById('login-panel').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    loadData().then(renderDashboard);
   }
 })();
 </script>
