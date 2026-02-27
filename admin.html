@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Email Sent Statistics | RORGNY</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ror-blue:   #003087;
+      --ror-green:  #00A651;
+      --ror-teal:   #007B5E;
+      --ror-sky:    #E8F4FD;
+      --near-black: #1A1A2E;
+      --gray:       #6B7280;
+      --border:     #D1D5DB;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Nunito', sans-serif;
+      color: var(--near-black);
+      background: var(--ror-sky);
+      min-height: 100vh;
+      padding: 32px 24px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .admin-header {
+      background: var(--ror-blue);
+      color: white;
+      padding: 28px 32px;
+    }
+    .admin-header h1 {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .admin-header p {
+      font-size: 14px;
+      opacity: 0.85;
+    }
+    .admin-header a {
+      color: var(--ror-green);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .admin-header a:hover { text-decoration: underline; }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--border);
+      background: #F9FAFB;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .stat-card .number {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--ror-green);
+      line-height: 1.2;
+    }
+    .stat-card .label {
+      font-size: 12px;
+      color: var(--gray);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      padding: 24px 32px 32px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      background: var(--ror-blue);
+      color: white;
+      font-weight: 700;
+    }
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    tr:hover { background: #F9FAFB; }
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--gray);
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .note {
+      font-size: 12px;
+      color: var(--gray);
+      margin-top: 20px;
+      padding: 16px;
+      background: #F3F4F6;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="admin-header">
+    <h1>Email Sent Statistics</h1>
+    <p><a href="index.html">← Back to campaign</a></p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="number" id="total-count">0</div>
+      <div class="label">Total emails sent</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="unique-senders">0</div>
+      <div class="label">Unique senders</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="unique-recipients">0</div>
+      <div class="label">Unique recipients</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Sent by</th>
+          <th>Email</th>
+          <th>To</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="sends-tbody">
+      </tbody>
+    </table>
+    <div class="empty-state" id="empty-state" style="display:none">
+      <div class="icon">📭</div>
+      <p>No emails sent yet. Data is stored in this browser when users send messages.</p>
+    </div>
+    <p class="note">Note: This admin panel reads from this browser's local storage. For site-wide statistics across all visitors, a backend database would be required.</p>
+  </div>
+</div>
+
+<script>
+(function() {
+  const data = JSON.parse(localStorage.getItem('ror_sends') || '[]');
+
+  document.getElementById('total-count').textContent = data.length;
+
+  const senderEmails = new Set(data.map(d => d.email));
+  document.getElementById('unique-senders').textContent = senderEmails.size;
+
+  const recipients = new Set();
+  data.forEach(d => {
+    (d.legislators || '').split(' and ').forEach(r => r.trim() && recipients.add(r.trim()));
+  });
+  document.getElementById('unique-recipients').textContent = recipients.size;
+
+  const tbody = document.getElementById('sends-tbody');
+  const emptyState = document.getElementById('empty-state');
+
+  if (data.length === 0) {
+    tbody.innerHTML = '';
+    emptyState.style.display = 'block';
+  } else {
+    emptyState.style.display = 'none';
+    tbody.innerHTML = data.map((row, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${escapeHtml(row.name || '—')}</td>
+        <td>${escapeHtml(row.email || '—')}</td>
+        <td>${escapeHtml(row.legislators || '—')}</td>
+        <td>${row.ts ? new Date(row.ts).toLocaleString() : '—'}</td>
+      </tr>
+    `).join('');
+  }
+
+  function escapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+})();
+</script>
+
+</body>
+</html>

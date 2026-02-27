@@ -162,12 +162,12 @@
     }
 
     .hero-stats {
-      display: flex;
-      gap: 32px;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
     }
 
-    .stat { text-align: left; }
+    .stat { text-align: left; min-width: 0; }
 
     .stat-num {
       font-family: 'Nunito', sans-serif;
@@ -615,7 +615,9 @@
       .form-row-address { grid-template-columns: 1fr; }
       .form-actions  { flex-direction: column; }
       .action-btn    { min-width: 100%; }
-      .hero-stats   { gap: 20px; }
+      .hero-stats   { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .hero-stats .stat-num { font-size: 24px; }
+      .hero-stats .stat-label { font-size: 10px; max-width: none; }
       .nav-logo-img { height: 80px; max-width: 300px; }
     }
 
@@ -651,7 +653,7 @@
 
     <div class="hero-inner">
       <span class="hero-eyebrow fade-in">Take Action · New York State Budget 2026</span>
-      <h1 class="fade-in">Every child deserves to <em>love reading.</em> Tell Albany to make it happen.</h1>
+      <h1 class="fade-in">Fight for the right to read.</h1>
       <p class="hero-sub fade-in">
         New York families need state funding for childhood literacy programs — including Reach Out and Read and Dolly Parton's Imagination Library. Contact your Assembly Member and State Senator in one click.
       </p>
@@ -805,13 +807,12 @@
 <footer>
   <p>
     <strong style="color:white">Reach Out and Read of Greater New York</strong><br/>
-    Advocating for childhood literacy across the five boroughs and beyond.<br/>
+    Fighting for the right to read across the five boroughs and beyond.<br/>
     <a href="https://reachoutandread.org" target="_blank">reachoutandread.org</a>
-    &nbsp;·&nbsp;
-    <a href="https://imaginationlibrary.com" target="_blank">imaginationlibrary.com</a>
   </p>
   <p style="margin-top:12px; font-size:12px;">
-    This site is for advocacy purposes only. Messages are sent directly to your elected representatives.
+    This site is for advocacy purposes only. Messages are sent directly to your elected representatives.<br/>
+    <a href="admin.html" style="opacity:0.6;">Admin</a>
   </p>
 </footer>
 
