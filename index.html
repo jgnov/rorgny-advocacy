@@ -1197,7 +1197,7 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
   if (CONFIG.EMAILJS_SERVICE_ID === 'YOUR_SERVICE_ID') {
     // DEMO: simulate send
     await new Promise(r => setTimeout(r, 1200));
-    logAction(senderName, email, legNamesStr);
+    logAction(senderName, email, legNamesStr, recipients);
     showSuccessScreen(senderName);
     return;
   }
@@ -1214,7 +1214,7 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
     });
 
     if (window.location.search.includes('test=1')) console.log('[Step 3] Email – sent successfully to', recipients);
-    logAction(senderName, email, legNamesStr);
+    logAction(senderName, email, legNamesStr, recipients);
     showSuccessScreen(senderName);
 
   } catch(err) {
@@ -1228,8 +1228,8 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
 // ─────────────────────────────────────────────
 // TRACKING (localStorage + Supabase)
 // ─────────────────────────────────────────────
-function logAction(name, email, legislators) {
-  const row = { name, email, legislators, ts: new Date().toISOString() };
+function logAction(name, email, legislators, recipientEmails) {
+  const row = { name, email, legislators, recipient_emails: recipientEmails || '', ts: new Date().toISOString() };
   try {
     const log = JSON.parse(localStorage.getItem('ror_sends') || '[]');
     log.push(row);

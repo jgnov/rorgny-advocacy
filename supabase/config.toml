@@ -1,0 +1,7 @@
+# Supabase project config (used for Edge Function deployment)
+# Run: supabase link --project-ref YOUR_PROJECT_ID
+# Then: supabase functions deploy admin-sends
+
+[functions.admin-sends]
+verify_jwt = false
+# Custom password auth; no Supabase JWT required

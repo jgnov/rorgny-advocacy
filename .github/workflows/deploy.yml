@@ -1,7 +1,7 @@
 # Deploy to GitHub Pages (rorgny.goinggreen.earth)
 # Add these secrets in repo Settings > Secrets:
 #   OPEN_STATES_API_KEY, EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID
-#   SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_SECRET (optional, for admin panel)
+#   SUPABASE_URL, SUPABASE_ANON_KEY (optional, for admin panel)
 # Set Pages source to "GitHub Actions" in Settings > Pages
 
 name: Deploy
@@ -40,7 +40,6 @@ jobs:
           echo "EMAILJS_TEMPLATE_ID=${{ secrets.EMAILJS_TEMPLATE_ID }}" >> .env
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
-          echo "ADMIN_SECRET=${{ secrets.ADMIN_SECRET }}" >> .env
 
       - run: npm run build
 

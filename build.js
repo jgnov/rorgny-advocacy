@@ -20,7 +20,6 @@ const ENV_VARS = [
   'EMAILJS_TEMPLATE_ID',
   'SUPABASE_URL',
   'SUPABASE_ANON_KEY',
-  'ADMIN_SECRET',
 ];
 
 const root = path.join(__dirname);
@@ -41,7 +40,6 @@ const DEFAULTS = {
   EMAILJS_TEMPLATE_ID: 'YOUR_TEMPLATE_ID',
   SUPABASE_URL: '',
   SUPABASE_ANON_KEY: '',
-  ADMIN_SECRET: '',
 };
 const replacements = {};
 for (const key of ENV_VARS) {

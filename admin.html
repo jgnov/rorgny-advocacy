@@ -158,7 +158,7 @@
 <div class="container">
   <div class="admin-header">
     <h1>Email Sent Statistics</h1>
-    <p><a href="index.html">← Back to campaign</a></p>
+    <p><a href="index.html">← Back to campaign</a><span id="logout-wrap" class="hidden"> · <a href="#" id="logout-link">Log out</a></span></p>
   </div>
 
   <div id="login-panel" class="login-panel">
@@ -192,7 +192,8 @@
             <th>#</th>
             <th>Sent by</th>
             <th>Email</th>
-            <th>To</th>
+            <th>To (names)</th>
+            <th>To (emails)</th>
             <th>Date</th>
           </tr>
         </thead>
@@ -208,23 +209,28 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function() {
   const CONFIG = {
     SUPABASE_URL:   '__SUPABASE_URL__',
     SUPABASE_ANON_KEY: '__SUPABASE_ANON_KEY__',
-    ADMIN_SECRET:  '__ADMIN_SECRET__',
   };
 
   const SESSION_KEY = 'ror_admin';
+  const SESSION_PW_KEY = 'ror_admin_pw';
 
   function isLoggedIn() {
     return sessionStorage.getItem(SESSION_KEY) === '1';
   }
 
-  function setLoggedIn() {
+  function setLoggedIn(password) {
     sessionStorage.setItem(SESSION_KEY, '1');
+    sessionStorage.setItem(SESSION_PW_KEY, password);
+  }
+
+  function clearSession() {
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_PW_KEY);
   }
 
   function renderDashboard(data) {
@@ -235,7 +241,12 @@
 
     const recipients = new Set();
     data.forEach(d => {
-      (d.legislators || '').split(' and ').forEach(r => r.trim() && recipients.add(r.trim()));
+      const emails = (d.recipient_emails || '').split(/[,\s]+/).filter(Boolean);
+      if (emails.length) {
+        emails.forEach(e => recipients.add(e.trim()));
+      } else {
+        (d.legislators || '').split(' and ').forEach(r => r.trim() && recipients.add(r.trim()));
+      }
     });
     document.getElementById('unique-recipients').textContent = recipients.size;
 
@@ -254,6 +265,7 @@
           <td>${escapeHtml(row.name || '—')}</td>
           <td>${escapeHtml(row.email || '—')}</td>
           <td>${escapeHtml(row.legislators || '—')}</td>
+          <td>${escapeHtml(row.recipient_emails || '—')}</td>
           <td>${row.ts ? new Date(row.ts).toLocaleString() : '—'}</td>
         </tr>
       `).join('');
@@ -266,14 +278,23 @@
     return div.innerHTML;
   }
 
-  async function loadData() {
-    if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY) {
+  async function loadData(password) {
+    if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && password) {
       try {
-        const { createClient } = supabase;
-        const sb = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-        const { data, error } = await sb.from('sends').select('*').order('ts', { ascending: false });
-        if (!error && data) return data;
-      } catch(e) {}
+        const url = CONFIG.SUPABASE_URL.replace(/\/$/, '') + '/functions/v1/admin-sends';
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ password }),
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+        if (res.status === 401) return null;
+      } catch (e) {}
     }
     return JSON.parse(localStorage.getItem('ror_sends') || '[]');
   }
@@ -281,21 +302,27 @@
   document.getElementById('login-btn').addEventListener('click', async function() {
     const pw = document.getElementById('admin-password').value;
     const errEl = document.getElementById('login-error');
-    if (!CONFIG.ADMIN_SECRET) {
-      errEl.textContent = 'Admin not configured. Set ADMIN_SECRET in .env.';
+    if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY) {
+      errEl.textContent = 'Admin not configured. Set up Supabase and deploy the admin-sends Edge Function.';
       errEl.classList.remove('hidden');
       return;
     }
-    if (pw !== CONFIG.ADMIN_SECRET) {
-      errEl.textContent = 'Incorrect password.';
+    if (!pw.trim()) {
+      errEl.textContent = 'Please enter the password.';
       errEl.classList.remove('hidden');
       return;
     }
     errEl.classList.add('hidden');
-    setLoggedIn();
+    const data = await loadData(pw);
+    if (data === null) {
+      errEl.textContent = 'Incorrect password.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    setLoggedIn(pw);
     document.getElementById('login-panel').classList.add('hidden');
     document.getElementById('dashboard').classList.remove('hidden');
-    const data = await loadData();
+    document.getElementById('logout-wrap').classList.remove('hidden');
     renderDashboard(data);
   });
 
@@ -303,10 +330,33 @@
     if (e.key === 'Enter') document.getElementById('login-btn').click();
   });
 
+  document.getElementById('logout-link').addEventListener('click', function(e) {
+    e.preventDefault();
+    clearSession();
+    document.getElementById('logout-wrap').classList.add('hidden');
+    document.getElementById('dashboard').classList.add('hidden');
+    document.getElementById('login-panel').classList.remove('hidden');
+    document.getElementById('admin-password').value = '';
+    document.getElementById('login-error').classList.add('hidden');
+  });
+
   if (isLoggedIn()) {
-    document.getElementById('login-panel').classList.add('hidden');
-    document.getElementById('dashboard').classList.remove('hidden');
-    loadData().then(renderDashboard);
+    const storedPw = sessionStorage.getItem(SESSION_PW_KEY);
+    if (storedPw) {
+      document.getElementById('login-panel').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      document.getElementById('logout-wrap').classList.remove('hidden');
+      loadData(storedPw).then(function(data) {
+        if (data === null) {
+          clearSession();
+          location.reload();
+        } else {
+          renderDashboard(data);
+        }
+      });
+    } else {
+      clearSession();
+    }
   }
 })();
 </script>
