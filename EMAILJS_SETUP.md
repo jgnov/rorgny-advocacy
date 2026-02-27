@@ -67,6 +67,32 @@ A constituent has sent you a message via Reach Out and Read advocacy:
 
 ---
 
+## Step 3b (Optional): Admin Email Alert Template
+
+Get an email each time someone successfully sends an advocacy message.
+
+1. Go to [Email Templates](https://dashboard.emailjs.com/admin/templates)
+2. Click **Create New Template**
+3. **To Email**: Set to your admin email (fixed in template)
+4. **Subject**: e.g. `New advocacy email sent: {{sender_name}}`
+5. **Content** (or Body):
+
+```
+Someone sent an advocacy email via the campaign:
+
+Sender: {{sender_name}} ({{sender_email}})
+Sent to: {{legislators}}
+Recipient emails: {{recipient_emails}}
+Date: {{date}}
+```
+
+6. Use the same **Email Service** as your main advocacy template
+7. **Save** and copy the **Template ID** → `EMAILJS_ADMIN_TEMPLATE_ID`
+
+Add to `.env` and GitHub Secrets: `EMAILJS_ADMIN_TEMPLATE_ID=template_abc123`
+
+---
+
 ## Step 4: Update Your Site's CONFIG
 
 In `index.html`, find the CONFIG object (around line 829) and replace the placeholders with your real values:

@@ -810,13 +810,14 @@
 // See EMAILJS_SETUP.md for step-by-step EmailJS dashboard setup.
 // ─────────────────────────────────────────────
 const CONFIG = {
-  EMAILJS_PUBLIC_KEY:    '__EMAILJS_PUBLIC_KEY__',   // Injected by build from .env
-  EMAILJS_SERVICE_ID:    '__EMAILJS_SERVICE_ID__',   // Injected by build from .env
-  EMAILJS_TEMPLATE_ID:   '__EMAILJS_TEMPLATE_ID__', // Injected by build from .env
-  OPEN_STATES_API_KEY:   '__OPEN_STATES_API_KEY__', // Injected by build from .env
-  SUPABASE_URL:          '__SUPABASE_URL__',       // Injected by build from .env
-  SUPABASE_ANON_KEY:     '__SUPABASE_ANON_KEY__',   // Injected by build from .env
-  TEST_EMAIL:            'unclejosh@gmail.com',     // Set to your email, then add ?test=1 to URL to send test there
+  EMAILJS_PUBLIC_KEY:       '__EMAILJS_PUBLIC_KEY__',   // Injected by build from .env
+  EMAILJS_SERVICE_ID:       '__EMAILJS_SERVICE_ID__',   // Injected by build from .env
+  EMAILJS_TEMPLATE_ID:      '__EMAILJS_TEMPLATE_ID__',  // Injected by build from .env
+  EMAILJS_ADMIN_TEMPLATE_ID:'__EMAILJS_ADMIN_TEMPLATE_ID__', // Optional: admin notification when someone sends
+  OPEN_STATES_API_KEY:      '__OPEN_STATES_API_KEY__',  // Injected by build from .env
+  SUPABASE_URL:             '__SUPABASE_URL__',        // Injected by build from .env
+  SUPABASE_ANON_KEY:        '__SUPABASE_ANON_KEY__',   // Injected by build from .env
+  TEST_EMAIL:               'unclejosh@gmail.com',      // Set to your email, then add ?test=1 to URL to send test there
 };
 
 // ─────────────────────────────────────────────
@@ -1215,6 +1216,16 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
 
     if (window.location.search.includes('test=1')) console.log('[Step 3] Email – sent successfully to', recipients);
     logAction(senderName, email, legNamesStr, recipients);
+    // Optional: email admin when someone sends (uses same EmailJS service, different template)
+    if (CONFIG.EMAILJS_ADMIN_TEMPLATE_ID) {
+      emailjs.send(CONFIG.EMAILJS_SERVICE_ID, CONFIG.EMAILJS_ADMIN_TEMPLATE_ID, {
+        sender_name:       senderName,
+        sender_email:      email,
+        legislators:       legNamesStr,
+        recipient_emails:  recipients,
+        date:              new Date().toLocaleString(),
+      }).then(() => {}, () => {});
+    }
     showSuccessScreen(senderName);
 
   } catch(err) {
