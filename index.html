@@ -1092,15 +1092,20 @@ function renderLegislators() {
 // ─────────────────────────────────────────────
 // EMAIL TEMPLATE
 // ─────────────────────────────────────────────
-function buildEmailBody(senderName, legislatorNames) {
-  const names = Array.isArray(legislatorNames)
-    ? legislatorNames
-    : legislatorNames ? [legislatorNames] : [legislators.assembly?.name, legislators.senate?.name].filter(Boolean);
-  const greeting = names.length === 0
+function buildEmailBody(senderName, legsOrNames) {
+  const legs = Array.isArray(legsOrNames) && legsOrNames.length > 0 && typeof legsOrNames[0] === 'object'
+    ? legsOrNames
+    : [legislators.assembly, legislators.senate].filter(Boolean);
+  const last = n => (n || '').trim().split(/\s+/).pop() || '';
+  const salutation = legs.map(l => {
+    const lastName = last(l.name);
+    if ((l.role || '').toLowerCase().includes('assembly')) return `Assembly Member ${lastName}`;
+    if ((l.role || '').toLowerCase().includes('senate')) return `Senator ${lastName}`;
+    return lastName || 'Legislator';
+  });
+  const greeting = salutation.length === 0
     ? 'Dear Legislator,'
-    : names.length === 1
-      ? `Dear ${names[0]},`
-      : `Dear ${names.join(' and ')},`;
+    : `Dear ${salutation.join(' and ')},`;
 
   return `${greeting}
 
@@ -1139,7 +1144,7 @@ function buildEmailPreview() {
     verifyEl.style.display = 'none';
   }
 
-  const body = buildEmailBody(senderName, legNames);
+  const body = buildEmailBody(senderName, legs);
   document.getElementById('email-body-preview').textContent = body;
   document.getElementById('email-preview').style.display = 'block';
 }
@@ -1201,8 +1206,8 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
   showStatus('send-status', '', '');
 
   const senderName  = `${firstName} ${lastName}`;
-  const legNames    = [legislators.assembly?.name, legislators.senate?.name].filter(Boolean);
-  const emailBody   = buildEmailBody(senderName, legNames);
+  const legs        = [legislators.assembly, legislators.senate].filter(Boolean);
+  const emailBody   = buildEmailBody(senderName, legs);
   let recipients    = [legislators.assembly?.email, legislators.senate?.email].filter(Boolean).join(', ');
   let legNamesStr   = legNames.join(' and ');
 
