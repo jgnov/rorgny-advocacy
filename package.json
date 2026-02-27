@@ -1,0 +1,12 @@
+{
+  "name": "rorgny-advocacy",
+  "version": "1.0.0",
+  "description": "Reach Out and Read of Greater New York - Advocacy Site",
+  "scripts": {
+    "build": "node build.js",
+    "preview": "npm run build && npx serve dist -p 8080"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5"
+  }
+}

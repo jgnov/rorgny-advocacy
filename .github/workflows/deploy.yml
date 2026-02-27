@@ -1,0 +1,55 @@
+# Deploy to GitHub Pages (rorgny.goinggreen.earth)
+# Add these secrets in repo Settings > Secrets: GOOGLE_CIVIC_KEY, OPEN_STATES_API_KEY, EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID
+# Set Pages source to "GitHub Actions" in Settings > Pages
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Create .env from secrets
+        run: |
+          echo "GOOGLE_CIVIC_KEY=${{ secrets.GOOGLE_CIVIC_KEY }}" >> .env
+          echo "OPEN_STATES_API_KEY=${{ secrets.OPEN_STATES_API_KEY }}" >> .env
+          echo "EMAILJS_PUBLIC_KEY=${{ secrets.EMAILJS_PUBLIC_KEY }}" >> .env
+          echo "EMAILJS_SERVICE_ID=${{ secrets.EMAILJS_SERVICE_ID }}" >> .env
+          echo "EMAILJS_TEMPLATE_ID=${{ secrets.EMAILJS_TEMPLATE_ID }}" >> .env
+
+      - run: npm run build
+
+      - uses: actions/upload-pages-artifact@3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@4

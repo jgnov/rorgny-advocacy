@@ -43,11 +43,12 @@
 
     .header-left {
       background: var(--ror-blue);
-      padding: 36px 48px 60px;
+      padding: 40px 48px 60px;
       position: relative;
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      min-height: 50vh;
     }
 
     .header-left::before {
@@ -94,9 +95,9 @@
     .nav {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       width: 100%;
-      padding-bottom: 48px;
+      padding-bottom: 56px;
       position: relative;
       z-index: 2;
     }
@@ -104,7 +105,7 @@
     .nav-logo {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       text-decoration: none;
     }
 
@@ -136,7 +137,7 @@
       text-transform: uppercase;
       padding: 6px 14px;
       border-radius: 100px;
-      margin-bottom: 24px;
+      margin-bottom: 32px;
       align-self: flex-start;
     }
 
@@ -146,7 +147,7 @@
       font-weight: 900;
       color: white;
       line-height: 1.1;
-      margin-bottom: 20px;
+      margin-bottom: 28px;
     }
 
     .hero-inner h1 em {
@@ -158,13 +159,13 @@
       color: rgba(255,255,255,0.80);
       font-size: 16px;
       line-height: 1.7;
-      margin-bottom: 40px;
+      margin-bottom: 48px;
     }
 
     .hero-stats {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
+      gap: 32px;
     }
 
     .stat { text-align: left; min-width: 0; }
@@ -677,6 +678,9 @@
   <!-- RIGHT: Action form -->
   <div class="header-right" id="take-action">
     <div id="form-wrapper">
+      <div id="test-mode-banner" class="status-msg" style="display:none; margin-bottom:16px; background:rgba(245,166,35,0.2); border-color:rgba(245,166,35,0.5); color:#FCD34D;">
+        &#9888; Test mode: emails will be sent to your test address, not legislators.
+      </div>
       <p class="section-label">Take Action</p>
       <h2 class="section-heading">Send your message to Albany</h2>
       <p class="section-body">
@@ -824,12 +828,15 @@
 <script>
 // ─────────────────────────────────────────────
 // CONFIGURATION — replace with your real keys
+// See EMAILJS_SETUP.md for step-by-step EmailJS dashboard setup.
 // ─────────────────────────────────────────────
 const CONFIG = {
-  EMAILJS_PUBLIC_KEY:  'YOUR_EMAILJS_PUBLIC_KEY',   // from EmailJS dashboard
-  EMAILJS_SERVICE_ID:  'YOUR_SERVICE_ID',           // e.g. 'service_abc123'
-  EMAILJS_TEMPLATE_ID: 'YOUR_TEMPLATE_ID',          // e.g. 'template_xyz789'
-  GOOGLE_CIVIC_KEY:    'AIzaSyDjUCvqx9DSxIn-t85KY5vEvTPHBk92UIY', // In Google Cloud Console: add rorgny.goinggreen.earth/* and http://localhost:8080/* for local testing
+  EMAILJS_PUBLIC_KEY:    '3wcYZIswvDU349FA6',   // Account > API Keys
+  EMAILJS_SERVICE_ID:    'service_gdpe15v',           // Email Services (e.g. service_advocacy)
+  EMAILJS_TEMPLATE_ID:   'template_1lfv5fu',          // Email Templates (e.g. template_xyz789)
+  GOOGLE_CIVIC_KEY:      'AIzaSyDjUCvqx9DSxIn-t85KY5vEvTPHBk92UIY', // Add rorgny.goinggreen.earth/* and localhost for testing
+  OPEN_STATES_API_KEY:   '467434da-6b0d-4430-87b5-b81b6d17e30c',   // open.pluralpolicy.com - injected by build
+  TEST_EMAIL:            'unclejosh@gmail.com',                          // Set to your email, then add ?test=1 to URL to send test there
 };
 
 // ─────────────────────────────────────────────
@@ -844,6 +851,14 @@ let verifiedAddressDisplay = null;  // normalized address string for confirmatio
 (function(){
   if (CONFIG.EMAILJS_PUBLIC_KEY !== 'YOUR_EMAILJS_PUBLIC_KEY') {
     emailjs.init(CONFIG.EMAILJS_PUBLIC_KEY);
+  }
+})();
+
+// Show test mode banner when ?test=1 and TEST_EMAIL is set
+(function(){
+  if (window.location.search.includes('test=1') && CONFIG.TEST_EMAIL) {
+    const el = document.getElementById('test-mode-banner');
+    if (el) el.style.display = 'block';
   }
 })();
 
@@ -924,7 +939,8 @@ async function lookupLegislators() {
   document.getElementById('email-preview').style.display = 'none';
   document.getElementById('send-btn').disabled = true;
 
-  if (CONFIG.GOOGLE_CIVIC_KEY === 'YOUR_GOOGLE_CIVIC_API_KEY') {
+  const useDemo = CONFIG.GOOGLE_CIVIC_KEY === 'YOUR_GOOGLE_CIVIC_API_KEY' || CONFIG.OPEN_STATES_API_KEY === 'YOUR_OPEN_STATES_API_KEY';
+  if (useDemo) {
     // DEMO MODE: simulate a result
     await new Promise(r => setTimeout(r, 800));
     legislators = {
@@ -938,20 +954,26 @@ async function lookupLegislators() {
     return;
   }
 
-  try {
-    // Use minimal params – levels/roles can trigger 400; we filter client-side
-    const url = `https://www.googleapis.com/civicinfo/v2/representatives?key=${CONFIG.GOOGLE_CIVIC_KEY}&address=${encodeURIComponent(address)}`;
-    const res = await fetch(url);
-    const data = await res.json();
+  const debug = window.location.search.includes('test=1');
 
-    const errMsg = data.error?.message || data.error?.errors?.[0]?.message;
-    if (!res.ok || !data.officials) throw new Error(errMsg || 'No results found.');
+  try {
+    // Step 1: Google Divisions API – get OCD-IDs for address
+    const divUrl = `https://www.googleapis.com/civicinfo/v2/divisionsByAddress?address=${encodeURIComponent(address)}&key=${CONFIG.GOOGLE_CIVIC_KEY}`;
+    if (debug) console.log('[Step 1] Google Divisions API – requesting divisions for address:', address);
+    const divRes = await fetch(divUrl);
+    const divData = await divRes.json();
+
+    const divErrMsg = divData.error?.message || divData.error?.errors?.[0]?.message;
+    if (!divRes.ok || !divData.divisions) throw new Error(divErrMsg || 'Address lookup failed.');
+
+    const ocdIds = Object.keys(divData.divisions || {});
+    if (debug) console.log('[Step 1] Google Divisions – OK. OCD-IDs returned:', ocdIds);
 
     legislators = { assembly: null, senate: null };
 
-    // Build verified address display from API's normalized input if available
-    if (data.normalizedInput) {
-      const n = data.normalizedInput;
+    // Build verified address display from normalized input
+    if (divData.normalizedInput) {
+      const n = divData.normalizedInput;
       const parts = [n.line1];
       if (n.line2) parts.push(n.line2);
       if (n.city) parts.push(n.city);
@@ -961,23 +983,47 @@ async function lookupLegislators() {
       verifiedAddressDisplay = address;
     }
 
-    for (const [divKey, divObj] of Object.entries(data.divisions || {})) {
-      const isAssembly = divKey.includes('sldl');
-      const isSenate   = divKey.includes('sldu');
-      for (const offIdx of (divObj.officeIndices || [])) {
-        const office = data.offices?.[offIdx];
-        for (const oIdx of (office?.officialIndices || [])) {
-          const official = data.officials?.[oIdx];
-          if (!official) continue;
-          const emailRaw = official.emails?.[0] || deriveEmail(official.name, isAssembly);
-          if (isAssembly && !legislators.assembly) {
-            legislators.assembly = { name: official.name, role: 'NY State Assembly', email: emailRaw };
-          }
-          if (isSenate && !legislators.senate) {
-            legislators.senate = { name: official.name, role: 'NY State Senate', email: emailRaw };
-          }
-        }
+    // Parse OCD-IDs for sldl (Assembly) and sldu (Senate) district numbers
+    let assemblyDistrict = null;
+    let senateDistrict = null;
+    for (const ocdId of Object.keys(divData.divisions || {})) {
+      const sldlMatch = ocdId.match(/sldl:(\d+)/);
+      const slduMatch = ocdId.match(/sldu:(\d+)/);
+      if (sldlMatch) assemblyDistrict = sldlMatch[1];
+      if (slduMatch) senateDistrict = slduMatch[1];
+    }
+
+    if (!assemblyDistrict && !senateDistrict) throw new Error('Could not find state legislative districts for that address. Please verify your street address and that you entered a valid NY zip code.');
+
+    if (debug) console.log('[Step 1] Parsed districts – Assembly:', assemblyDistrict, 'Senate:', senateDistrict);
+
+    // Step 2: Open States API – fetch legislators by district
+    const osHeaders = { 'X-API-KEY': CONFIG.OPEN_STATES_API_KEY };
+
+    async function fetchOpenStatesLegislator(district, orgClass, isAssembly) {
+      const chamber = isAssembly ? 'Assembly' : 'Senate';
+      const url = `https://v3.openstates.org/people?jurisdiction=ny&district=${district}&org_classification=${orgClass}&include=offices`;
+      if (debug) console.log(`[Step 2] Open States – fetching ${chamber} (district ${district})...`);
+      const res = await fetch(url, { headers: osHeaders });
+      const data = await res.json();
+      if (!res.ok) {
+        const errDetail = data.detail || data.message || (typeof data === 'string' ? data : null);
+        throw new Error(errDetail || `Open States API error (${res.status})`);
       }
+      if (debug) console.log(`[Step 2] Open States ${chamber} –`, data.results?.length ? data.results[0]?.name : 'no results');
+      if (data.results?.length > 0) {
+        const p = data.results[0];
+        const email = p.email || (p.offices?.[0]?.email) || deriveEmail(p.name, isAssembly);
+        return { name: p.name, role: isAssembly ? 'NY State Assembly' : 'NY State Senate', email };
+      }
+      return null;
+    }
+
+    if (assemblyDistrict) {
+      legislators.assembly = await fetchOpenStatesLegislator(assemblyDistrict, 'lower', true);
+    }
+    if (senateDistrict) {
+      legislators.senate = await fetchOpenStatesLegislator(senateDistrict, 'upper', false);
     }
 
     if (!legislators.assembly && !legislators.senate) throw new Error('Could not find state legislators for that address. Please verify your street address and that you entered a valid NY zip code.');
@@ -988,8 +1034,8 @@ async function lookupLegislators() {
   } catch(err) {
     verifiedAddressDisplay = null;
     const msg = err.message || String(err);
-    const isApiKeyError = /API key|invalid.*key|permission|forbidden|unauthorized/i.test(msg);
-    if (isApiKeyError) console.error('Civic API error:', msg);
+    const isApiKeyError = /API key|invalid.*key|permission|forbidden|unauthorized|rate limit|401|403/i.test(msg);
+    if (isApiKeyError) console.error('Lookup API error:', msg);
     const userMessage = isApiKeyError
       ? 'Address lookup is temporarily unavailable. Please try again later or contact the site administrator.'
       : '❌ ' + msg + (msg.includes('zip') || msg.includes('address') ? '' : ' Please check your street address and 5-digit NY zip code.');
@@ -1128,8 +1174,17 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
 
   const senderName  = `${firstName} ${lastName}`;
   const emailBody   = buildEmailBody(senderName);
-  const recipients  = [legislators.assembly?.email, legislators.senate?.email].filter(Boolean).join(', ');
-  const legNames    = [legislators.assembly?.name, legislators.senate?.name].filter(Boolean).join(' and ');
+  let recipients    = [legislators.assembly?.email, legislators.senate?.email].filter(Boolean).join(', ');
+  let legNames      = [legislators.assembly?.name, legislators.senate?.name].filter(Boolean).join(' and ');
+
+  // Test mode: add ?test=1 to URL and set CONFIG.TEST_EMAIL to send to yourself instead of legislators
+  if (window.location.search.includes('test=1') && CONFIG.TEST_EMAIL) {
+    recipients = CONFIG.TEST_EMAIL;
+    legNames = 'Test Recipient';
+    console.log('[Step 3] Email – test mode: sending to', CONFIG.TEST_EMAIL, 'instead of legislators');
+  } else {
+    console.log('[Step 3] Email – sending to legislators:', recipients);
+  }
 
   // Check if EmailJS is configured
   if (CONFIG.EMAILJS_SERVICE_ID === 'YOUR_SERVICE_ID') {
@@ -1151,10 +1206,12 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
       reply_to:          email,
     });
 
+    if (window.location.search.includes('test=1')) console.log('[Step 3] Email – sent successfully to', recipients);
     logAction(senderName, email, legNames);
     showSuccessScreen(senderName);
 
   } catch(err) {
+    if (window.location.search.includes('test=1')) console.error('[Step 3] Email – failed:', err.text || err.message);
     btn.disabled = false;
     btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send My Message to Albany`;
     showStatus('send-status', 'error', '❌ Failed to send: ' + (err.text || err.message || 'Unknown error. Please try again.'));
