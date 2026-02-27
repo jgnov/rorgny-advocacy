@@ -2,6 +2,8 @@
 
 Use this if the Supabase CLI is killed or won't run on your Mac.
 
+**⚠️ The Edge Function lives on Supabase and is separate from the admin panel.** When we update the code in this repo, you must manually redeploy the function in the Supabase Dashboard (Code tab → paste latest code → Deploy) for changes to take effect.
+
 ## Step 1: Add ADMIN_SECRET
 
 1. Open [Supabase Dashboard](https://supabase.com/dashboard) → your project
@@ -83,6 +85,16 @@ Deno.serve(async (req) => {
 
 The admin panel sends the Supabase anon key in the Authorization header, which satisfies the gateway.
 
+## Sync: Redeploy when repo code changes
+
+Whenever `supabase/functions/admin-sends/index.ts` is updated in the repo:
+
+1. Go to **Edge Functions** → **admin-sends**
+2. Click the **Code** tab
+3. Select all the code in the editor and delete it
+4. Copy the full code block from **Step 2** above (lines 19–79) and paste it
+5. Click **Deploy function** (or **Deploy updates**)
+
 ## Step 3: Test the function
 
 1. On the **admin-sends** function page, click the **Test** tab
@@ -98,3 +110,10 @@ Your function is live at:
 `https://iqkpbuetqfwmmiuwmslt.supabase.co/functions/v1/admin-sends`
 
 The admin panel will use it automatically if `SUPABASE_URL` and `SUPABASE_ANON_KEY` are set.
+
+## Troubleshooting 401 from admin panel
+
+- **Test works, admin panel gets 401:**  
+  1. Redeploy the Edge Function with the latest code above (Sync section).  
+  2. In GitHub → **Settings** → **Secrets** → **Actions**, confirm `SUPABASE_URL` and `SUPABASE_ANON_KEY` match your project (Settings → API in Supabase). A wrong anon key makes the gateway return 401 before the request reaches the function.  
+  3. In DevTools → Network → failed request → **Response** tab: if the body is `{"error":"Unauthorized"}`, the 401 is from our function (password mismatch). Any other body usually means the gateway rejected the request (wrong key).
