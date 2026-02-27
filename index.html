@@ -352,10 +352,12 @@
       margin-bottom: 6px;
     }
 
-    .form-actions {
+    .action-buttons-row {
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
+      margin-top: 6px;
+      margin-bottom: 16px;
     }
 
     .action-btn {
@@ -403,24 +405,11 @@
       cursor: not-allowed;
     }
 
-    .send-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
-
-    .address-verify-row {
-      margin-top: 6px;
-      margin-bottom: 10px;
-    }
 
     .verify-btn {
-      padding: 10px 20px;
       background: rgba(255,255,255,0.12);
       color: white;
       border: 1.5px solid rgba(255,255,255,0.35);
-      border-radius: 8px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
     }
 
     .verify-btn:hover {
@@ -614,7 +603,7 @@
       .header-right { padding: 40px 24px; }
       .form-row     { grid-template-columns: 1fr; }
       .form-row-address { grid-template-columns: 1fr; }
-      .form-actions  { flex-direction: column; }
+      .action-buttons-row { flex-direction: column; }
       .action-btn    { min-width: 100%; }
       .hero-stats   { grid-template-columns: repeat(3, 1fr); gap: 12px; }
       .hero-stats .stat-num { font-size: 24px; }
@@ -718,10 +707,9 @@
           </div>
         </div>
 
-        <div class="address-verify-row">
-          <button type="button" class="verify-btn" id="verify-btn" onclick="verifyAddress()">
-            ✓ Verify my address
-          </button>
+        <div class="action-buttons-row">
+          <button type="button" class="action-btn verify-btn" id="verify-btn" onclick="verifyAddress()">1. Verify my address</button>
+          <button type="submit" class="action-btn send-btn" id="send-btn" disabled>2. Send email to Albany</button>
         </div>
 
         <!-- Address confirmation (shown after successful verification) -->
@@ -740,15 +728,6 @@
           <span id="recipient-preview"></span>
           <div id="recipient-emails-verify" style="display:none; margin-top:8px; font-size:13px; opacity:0.9;"></div>
           <div class="email-preview-text" id="email-body-preview"></div>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="action-btn send-btn" id="send-btn" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-            Send my message to Albany
-          </button>
         </div>
 
         <div class="status-msg" id="send-status"></div>
@@ -1220,7 +1199,7 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
   } catch(err) {
     if (window.location.search.includes('test=1')) console.error('[Step 3] Email – failed:', err.text || err.message);
     btn.disabled = false;
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send My Message to Albany`;
+    btn.innerHTML = '2. Send email to Albany';
     showStatus('send-status', 'error', '❌ Failed to send: ' + (err.text || err.message || 'Unknown error. Please try again.'));
   }
 });
