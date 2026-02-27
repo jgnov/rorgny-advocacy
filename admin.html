@@ -294,10 +294,7 @@
           return await res.json();
         }
         const errBody = await res.json().catch(() => ({}));
-        if (res.status === 401) {
-          console.warn('[Admin 401] Response body:', JSON.stringify(errBody), '| If this is not {"error":"Unauthorized"}, the Supabase anon key may be wrong.');
-          return null;
-        }
+        if (res.status === 401) return null;
         return { serverError: errBody.error || 'Server error (' + res.status + ')' };
       } catch (e) {}
     }
