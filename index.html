@@ -975,10 +975,12 @@ async function lookupLegislators() {
     verifiedAddressDisplay = parts.length ? parts.join(', ') : address;
 
     // Step 2: Open States people.geo – lat/lng → legislators
-    const osHeaders = { 'X-API-KEY': CONFIG.OPEN_STATES_API_KEY };
-    const geoPeopleUrl = `https://v3.openstates.org/people.geo?lat=${lat}&lng=${lng}&include=offices`;
+    // Use apikey query param (more reliable from browser than header)
+    const apiKey = CONFIG.OPEN_STATES_API_KEY || '';
+    if (debug) console.log('[Step 2] Open States – API key present:', !!apiKey, '| placeholder?', apiKey.includes('YOUR_'));
+    const geoPeopleUrl = `https://v3.openstates.org/people.geo?lat=${lat}&lng=${lng}&include=offices&apikey=${encodeURIComponent(apiKey)}`;
     if (debug) console.log('[Step 2] Open States – fetching legislators for coordinates...');
-    const peopleRes = await fetch(geoPeopleUrl, { headers: osHeaders });
+    const peopleRes = await fetch(geoPeopleUrl);
     const peopleData = await peopleRes.json();
 
     if (!peopleRes.ok) {
