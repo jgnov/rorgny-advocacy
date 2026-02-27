@@ -72,7 +72,7 @@ The function is available at `https://YOUR_PROJECT_REF.supabase.co/functions/v1/
 1. Go to **Settings** → **API** in the Supabase dashboard
 2. Copy:
    - **Project URL** → `SUPABASE_URL`
-   - **Publishable key** (or legacy anon key) → `SUPABASE_ANON_KEY`
+   - **Legacy anon key** (Settings → API → Legacy API Keys) → `SUPABASE_ANON_KEY`. Use the JWT that starts with `eyJ`, not the `sb_publishable_xxx` key — Edge Functions require the legacy anon key.
 
 ## Step 5: Add to .env
 

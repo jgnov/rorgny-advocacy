@@ -113,7 +113,9 @@ The admin panel will use it automatically if `SUPABASE_URL` and `SUPABASE_ANON_K
 
 ## Troubleshooting 401 from admin panel
 
+- **`{"code":401,"message":"Invalid JWT"}`:** The Edge Functions gateway requires the **legacy anon key** (JWT format, starts with `eyJ...`), not the new `sb_publishable_xxx` key. In Supabase → **Settings** → **API** → **Legacy API Keys**, copy the **anon public** key. Use that exact value for `SUPABASE_ANON_KEY` in GitHub Secrets. Publishable keys cannot be sent in `Authorization: Bearer` for Edge Functions.
+
 - **Test works, admin panel gets 401:**  
   1. Redeploy the Edge Function with the latest code above (Sync section).  
-  2. In GitHub → **Settings** → **Secrets** → **Actions**, confirm `SUPABASE_URL` and `SUPABASE_ANON_KEY` match your project (Settings → API in Supabase). A wrong anon key makes the gateway return 401 before the request reaches the function.  
-  3. In DevTools → Network → failed request → **Response** tab: if the body is `{"error":"Unauthorized"}`, the 401 is from our function (password mismatch). Any other body usually means the gateway rejected the request (wrong key).
+  2. In GitHub → **Settings** → **Secrets** → **Actions**, confirm `SUPABASE_ANON_KEY` is the **legacy anon** JWT (starts with `eyJ`), not `sb_publishable_...`.  
+  3. In DevTools → Network → failed request → **Response** tab: if the body is `{"error":"Unauthorized"}`, the 401 is from our function (password mismatch). `{"code":401,"message":"Invalid JWT"}` means use the legacy anon key.
