@@ -74,12 +74,11 @@ const CONFIG = {
   EMAILJS_PUBLIC_KEY:  'your_actual_public_key',
   EMAILJS_SERVICE_ID:  'your_service_id',      // e.g. 'service_advocacy'
   EMAILJS_TEMPLATE_ID: 'your_template_id',     // e.g. 'template_xyz789'
-  GOOGLE_CIVIC_KEY:    '...',                  // Google Civic (Divisions API) – address lookup
-  OPEN_STATES_API_KEY: '...',                  // open.pluralpolicy.com – legislator details
+  OPEN_STATES_API_KEY: '...',                  // open.pluralpolicy.com – legislator lookup
 };
 ```
 
-**Open States API key** (for legislator lookup): Register at [open.pluralpolicy.com](https://open.pluralpolicy.com/accounts/profile/) to get an API key. Add it to `.env` as `OPEN_STATES_API_KEY`; the build script injects it into the site.
+**Open States API key** (for legislator lookup): Register at [open.pluralpolicy.com](https://open.pluralpolicy.com/accounts/profile/) to get an API key. Geocoding uses Photon (free); Open States provides legislator data.
 
 ---
 

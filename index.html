@@ -812,7 +812,7 @@
   <p>
     <strong style="color:white">Reach Out and Read of Greater New York</strong><br/>
     Fighting for the right to read across the five boroughs and beyond.<br/>
-    <a href="https://reachoutandread.org" target="_blank">reachoutandread.org</a>
+    <a href="https://reachoutandreadnyc.org/" target="_blank">reachoutandreadnyc.org</a>
   </p>
   <p style="margin-top:12px; font-size:12px;">
     This site is for advocacy purposes only. Messages are sent directly to your elected representatives.<br/>
@@ -834,8 +834,7 @@ const CONFIG = {
   EMAILJS_PUBLIC_KEY:    '3wcYZIswvDU349FA6',   // Account > API Keys
   EMAILJS_SERVICE_ID:    'service_gdpe15v',           // Email Services (e.g. service_advocacy)
   EMAILJS_TEMPLATE_ID:   'template_1lfv5fu',          // Email Templates (e.g. template_xyz789)
-  GOOGLE_CIVIC_KEY:      'AIzaSyDjUCvqx9DSxIn-t85KY5vEvTPHBk92UIY', // Add rorgny.goinggreen.earth/* and localhost for testing
-  OPEN_STATES_API_KEY:   '467434da-6b0d-4430-87b5-b81b6d17e30c',   // open.pluralpolicy.com - injected by build
+  OPEN_STATES_API_KEY:   '__OPEN_STATES_API_KEY__',   // open.pluralpolicy.com - injected by build
   TEST_EMAIL:            'unclejosh@gmail.com',                          // Set to your email, then add ?test=1 to URL to send test there
 };
 
@@ -865,7 +864,7 @@ let verifiedAddressDisplay = null;  // normalized address string for confirmatio
 // ─────────────────────────────────────────────
 // ADDRESS HELPERS
 // ─────────────────────────────────────────────
-// NY zip prefix -> city for better Civic API parsing (avoids 400 parseError)
+// NY zip prefix -> city for more accurate geocoding
 function cityFromZip(zip) {
   const n = parseInt(zip.slice(0, 3), 10);
   if (n >= 100 && n <= 102) return 'New York';
@@ -957,73 +956,54 @@ async function lookupLegislators() {
   const debug = window.location.search.includes('test=1');
 
   try {
-    // Step 1: Google Divisions API – get OCD-IDs for address
-    const divUrl = `https://www.googleapis.com/civicinfo/v2/divisionsByAddress?address=${encodeURIComponent(address)}&key=${CONFIG.GOOGLE_CIVIC_KEY}`;
-    if (debug) console.log('[Step 1] Google Divisions API – requesting divisions for address:', address);
-    const divRes = await fetch(divUrl);
-    const divData = await divRes.json();
+    // Step 1: Geocode address → lat/lng (Photon, free, no API key)
+    const geoUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(address)}&limit=1`;
+    if (debug) console.log('[Step 1] Geocoding – requesting coordinates for:', address);
+    const geoRes = await fetch(geoUrl);
+    const geoData = await geoRes.json();
 
-    const divErrMsg = divData.error?.message || divData.error?.errors?.[0]?.message;
-    if (!divRes.ok || !divData.divisions) throw new Error(divErrMsg || 'Address lookup failed.');
+    if (!geoRes.ok || !geoData.features?.length) {
+      throw new Error('Could not verify that address. Please check your street address and 5-digit NY zip code.');
+    }
 
-    const ocdIds = Object.keys(divData.divisions || {});
-    if (debug) console.log('[Step 1] Google Divisions – OK. OCD-IDs returned:', ocdIds);
+    const [lng, lat] = geoData.features[0].geometry.coordinates;
+    const props = geoData.features[0].properties || {};
+    if (debug) console.log('[Step 1] Geocoding – OK. lat:', lat, 'lng:', lng);
 
     legislators = { assembly: null, senate: null };
+    const parts = [props.street, props.city || props.locality, props.postcode ? `NY ${props.postcode}` : 'NY'].filter(Boolean);
+    verifiedAddressDisplay = parts.length ? parts.join(', ') : address;
 
-    // Build verified address display from normalized input
-    if (divData.normalizedInput) {
-      const n = divData.normalizedInput;
-      const parts = [n.line1];
-      if (n.line2) parts.push(n.line2);
-      if (n.city) parts.push(n.city);
-      if (n.state || n.zip) parts.push([n.state, n.zip].filter(Boolean).join(' '));
-      verifiedAddressDisplay = parts.filter(Boolean).join(', ');
-    } else {
-      verifiedAddressDisplay = address;
-    }
-
-    // Parse OCD-IDs for sldl (Assembly) and sldu (Senate) district numbers
-    let assemblyDistrict = null;
-    let senateDistrict = null;
-    for (const ocdId of Object.keys(divData.divisions || {})) {
-      const sldlMatch = ocdId.match(/sldl:(\d+)/);
-      const slduMatch = ocdId.match(/sldu:(\d+)/);
-      if (sldlMatch) assemblyDistrict = sldlMatch[1];
-      if (slduMatch) senateDistrict = slduMatch[1];
-    }
-
-    if (!assemblyDistrict && !senateDistrict) throw new Error('Could not find state legislative districts for that address. Please verify your street address and that you entered a valid NY zip code.');
-
-    if (debug) console.log('[Step 1] Parsed districts – Assembly:', assemblyDistrict, 'Senate:', senateDistrict);
-
-    // Step 2: Open States API – fetch legislators by district
+    // Step 2: Open States people.geo – lat/lng → legislators
     const osHeaders = { 'X-API-KEY': CONFIG.OPEN_STATES_API_KEY };
+    const geoPeopleUrl = `https://v3.openstates.org/people.geo?lat=${lat}&lng=${lng}&include=offices`;
+    if (debug) console.log('[Step 2] Open States – fetching legislators for coordinates...');
+    const peopleRes = await fetch(geoPeopleUrl, { headers: osHeaders });
+    const peopleData = await peopleRes.json();
 
-    async function fetchOpenStatesLegislator(district, orgClass, isAssembly) {
-      const chamber = isAssembly ? 'Assembly' : 'Senate';
-      const url = `https://v3.openstates.org/people?jurisdiction=ny&district=${district}&org_classification=${orgClass}&include=offices`;
-      if (debug) console.log(`[Step 2] Open States – fetching ${chamber} (district ${district})...`);
-      const res = await fetch(url, { headers: osHeaders });
-      const data = await res.json();
-      if (!res.ok) {
-        const errDetail = data.detail || data.message || (typeof data === 'string' ? data : null);
-        throw new Error(errDetail || `Open States API error (${res.status})`);
-      }
-      if (debug) console.log(`[Step 2] Open States ${chamber} –`, data.results?.length ? data.results[0]?.name : 'no results');
-      if (data.results?.length > 0) {
-        const p = data.results[0];
-        const email = p.email || (p.offices?.[0]?.email) || deriveEmail(p.name, isAssembly);
-        return { name: p.name, role: isAssembly ? 'NY State Assembly' : 'NY State Senate', email };
-      }
-      return null;
+    if (!peopleRes.ok) {
+      const errDetail = peopleData.detail || peopleData.message || (typeof peopleData === 'string' ? peopleData : null);
+      throw new Error(errDetail || `Open States API error (${peopleRes.status})`);
     }
 
-    if (assemblyDistrict) {
-      legislators.assembly = await fetchOpenStatesLegislator(assemblyDistrict, 'lower', true);
-    }
-    if (senateDistrict) {
-      legislators.senate = await fetchOpenStatesLegislator(senateDistrict, 'upper', false);
+    const results = peopleData.results || [];
+    if (debug) console.log('[Step 2] Open States – returned', results.length, 'people');
+
+    for (const p of results) {
+      const role = p.current_role;
+      if (!role) continue;
+      const org = (role.org_classification || '').toLowerCase();
+      const jurId = (p.jurisdiction?.id || '').toLowerCase();
+      if (!jurId.includes('ny')) continue;
+
+      if (org === 'lower' && !legislators.assembly) {
+        const email = p.email || (p.offices?.[0]?.email) || deriveEmail(p.name, true);
+        legislators.assembly = { name: p.name, role: 'NY State Assembly', email };
+      }
+      if (org === 'upper' && !legislators.senate) {
+        const email = p.email || (p.offices?.[0]?.email) || deriveEmail(p.name, false);
+        legislators.senate = { name: p.name, role: 'NY State Senate', email };
+      }
     }
 
     if (!legislators.assembly && !legislators.senate) throw new Error('Could not find state legislators for that address. Please verify your street address and that you entered a valid NY zip code.');
