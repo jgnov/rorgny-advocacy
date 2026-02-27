@@ -574,8 +574,8 @@
     }
 
     .share-btn:hover { opacity: 0.85; }
-    .share-btn-tw   { background: #1DA1F2; color: white; }
-    .share-btn-copy { background: rgba(255,255,255,0.12); color: white; }
+    .share-btn-copy  { background: rgba(255,255,255,0.12); color: white; }
+    .share-btn-donate { background: var(--ror-green); color: white; }
 
     /* ── FOOTER ── */
     footer {
@@ -764,8 +764,8 @@
         Thank you for standing up for children's literacy in New York.
       </p>
       <div class="share-row">
-        <a class="share-btn share-btn-tw" id="tw-share" href="#" target="_blank">🐦 Share on X/Twitter</a>
-        <button class="share-btn share-btn-copy" onclick="copyLink()">🔗 Copy link to share</button>
+        <button class="share-btn share-btn-copy" onclick="copyLink()">🔗 Copy link to share with others</button>
+        <a class="share-btn share-btn-donate" href="https://reachoutandreadnyc.org/donate/" target="_blank" rel="noopener">📚 Give the gift of books right now with a contribution to Reach Out and Read of Greater New York</a>
       </div>
     </div>
   </div>
@@ -1248,18 +1248,14 @@ function showStatus(id, type, html) {
 
 function showSuccessScreen(name) {
   document.getElementById('form-wrapper').style.display = 'none';
-  const ss = document.getElementById('success-screen');
-  ss.style.display = 'block';
-
-  const tweetText = encodeURIComponent(`I just told my NY State legislators to fund childhood literacy programs — including Reach Out and Read and Dolly Parton's Imagination Library. Join me! #ReadingWorks #NYBudget`);
-  document.getElementById('tw-share').href = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(window.location.href)}`;
+  document.getElementById('success-screen').style.display = 'block';
 }
 
 function copyLink() {
   navigator.clipboard.writeText(window.location.href).then(() => {
     const btn = document.querySelector('.share-btn-copy');
     btn.textContent = '✅ Copied!';
-    setTimeout(() => btn.textContent = '🔗 Copy link to share', 2000);
+    setTimeout(() => btn.textContent = '🔗 Copy link to share with others', 2000);
   });
 }
 </script>
