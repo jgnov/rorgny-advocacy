@@ -9,7 +9,8 @@ Deno.serve(async (req) => {
 
   try {
     const { password } = await req.json();
-    const adminSecret = Deno.env.get("ADMIN_SECRET");
+    const pw = (typeof password === "string" ? password : "").trim();
+    const adminSecret = Deno.env.get("ADMIN_SECRET")?.trim();
 
     if (!adminSecret) {
       return new Response(
@@ -17,7 +18,7 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
     }
-    if (password !== adminSecret) {
+    if (pw !== adminSecret) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }

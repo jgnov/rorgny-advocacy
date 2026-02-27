@@ -28,7 +28,8 @@ Deno.serve(async (req) => {
 
   try {
     const { password } = await req.json();
-    const adminSecret = Deno.env.get("ADMIN_SECRET");
+    const pw = (typeof password === "string" ? password : "").trim();
+    const adminSecret = Deno.env.get("ADMIN_SECRET")?.trim();
 
     if (!adminSecret) {
       return new Response(
@@ -36,7 +37,7 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
     }
-    if (password !== adminSecret) {
+    if (pw !== adminSecret) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
@@ -81,6 +82,15 @@ Deno.serve(async (req) => {
 5. Click **Deploy function**
 
 The admin panel sends the Supabase anon key in the Authorization header, which satisfies the gateway.
+
+## Step 3: Test the function
+
+1. On the **admin-sends** function page, click the **Test** tab
+2. Set **Request Body** to: `{"password":"your_password"}` (use the exact value you set for ADMIN_SECRET)
+3. Click **Send Request**
+4. If you get **200** with JSON data → the function works; the admin panel should too
+5. If you get **401** → the password doesn’t match. Re-check ADMIN_SECRET in Edge Functions → Secrets (no extra spaces)
+6. If you get **500** with "ADMIN_SECRET not configured" → add the secret in Edge Functions → Secrets
 
 ## Done
 

@@ -315,7 +315,8 @@
       return;
     }
     errEl.classList.add('hidden');
-    const data = await loadData(pw);
+    const passwordToSend = pw.trim();
+    const data = await loadData(passwordToSend);
     if (data === null) {
       errEl.textContent = 'Incorrect password.';
       errEl.classList.remove('hidden');
