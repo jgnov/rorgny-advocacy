@@ -111,9 +111,11 @@ Your function is live at:
 
 The admin panel will use it automatically if `SUPABASE_URL` and `SUPABASE_ANON_KEY` are set.
 
-## Troubleshooting 401 from admin panel
+## Troubleshooting
 
-- **`{"code":401,"message":"Invalid JWT"}`:** The Edge Functions gateway requires the **legacy anon key** (JWT format, starts with `eyJ...`), not the new `sb_publishable_xxx` key. In Supabase → **Settings** → **API** → **Legacy API Keys**, copy the **anon public** key. Use that exact value for `SUPABASE_ANON_KEY` in GitHub Secrets. Publishable keys cannot be sent in `Authorization: Bearer` for Edge Functions.
+- **"To (emails)" column shows "—" for all rows:** Run in Supabase → **SQL Editor**: `alter table public.sends add column if not exists recipient_emails text;` Existing rows stay empty; new sends will populate recipient emails.
+
+- **401 from admin panel – `{"code":401,"message":"Invalid JWT"}`:** The Edge Functions gateway requires the **legacy anon key** (JWT format, starts with `eyJ...`), not the new `sb_publishable_xxx` key. In Supabase → **Settings** → **API** → **Legacy API Keys**, copy the **anon public** key. Use that exact value for `SUPABASE_ANON_KEY` in GitHub Secrets. Publishable keys cannot be sent in `Authorization: Bearer` for Edge Functions.
 
 - **Test works, admin panel gets 401:**  
   1. Redeploy the Edge Function with the latest code above (Sync section).  

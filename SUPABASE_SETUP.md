@@ -39,7 +39,7 @@ If you previously created a policy "Allow anonymous select", remove it:
 drop policy if exists "Allow anonymous select" on public.sends;
 ```
 
-If you have an existing `sends` table and need to add the recipient emails column:
+**Add `recipient_emails`** (required for admin panel to show "To" emails). Run in **SQL Editor**:
 
 ```sql
 alter table public.sends add column if not exists recipient_emails text;
