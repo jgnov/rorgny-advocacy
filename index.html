@@ -862,6 +862,14 @@ let verifiedAddressDisplay = null;  // normalized address string for confirmatio
 // ─────────────────────────────────────────────
 // ADDRESS HELPERS
 // ─────────────────────────────────────────────
+function isNYZip(zip) {
+  const s = zip.replace(/\D/g, '').slice(0, 5);
+  if (s.length !== 5) return false;
+  const prefix = parseInt(s.slice(0, 3), 10);
+  // NY: 005xx (IRS), 100-149 (main NY range)
+  return (s.startsWith('005')) || (prefix >= 100 && prefix <= 149);
+}
+
 // NY zip prefix -> city for more accurate geocoding
 function cityFromZip(zip) {
   const n = parseInt(zip.slice(0, 3), 10);
@@ -906,13 +914,17 @@ function clearAddressVerification() {
 
 async function verifyAddress() {
   const street = document.getElementById('street-address').value.trim();
-  const zip    = document.getElementById('zip-code').value.trim().replace(/\D/g, '');
+  const zip    = document.getElementById('zip-code').value.trim().replace(/\D/g, '').slice(0, 5);
   if (!street) {
     showStatus('lookup-status', 'error', 'Please enter your street address.');
     return;
   }
   if (zip.length < 5) {
     showStatus('lookup-status', 'error', 'Please enter a valid 5-digit NY zip code.');
+    return;
+  }
+  if (!isNYZip(zip)) {
+    showStatus('lookup-status', 'error', 'Please enter a New York State zip code. This advocacy tool only reaches NY legislators.');
     return;
   }
   await lookupLegislators();
@@ -966,7 +978,13 @@ async function lookupLegislators() {
 
     const [lng, lat] = geoData.features[0].geometry.coordinates;
     const props = geoData.features[0].properties || {};
-    if (debug) console.log('[Step 1] Geocoding – OK. lat:', lat, 'lng:', lng);
+    if (debug) console.log('[Step 1] Geocoding – OK. lat:', lat, 'lng:', lng, '| state:', props.state);
+
+    // Ensure geocoded result is in NY
+    const state = (props.state || '').toUpperCase();
+    if (state && state !== 'NY' && state !== 'NEW YORK') {
+      throw new Error('That address appears to be outside New York State. This tool only reaches NY legislators.');
+    }
 
     legislators = { assembly: null, senate: null };
     const parts = [props.street, props.city || props.locality, props.postcode ? `NY ${props.postcode}` : 'NY'].filter(Boolean);
