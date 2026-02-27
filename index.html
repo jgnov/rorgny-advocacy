@@ -1087,8 +1087,17 @@ function renderLegislators() {
 // ─────────────────────────────────────────────
 // EMAIL TEMPLATE
 // ─────────────────────────────────────────────
-function buildEmailBody(senderName) {
-  return `Dear [Legislator],
+function buildEmailBody(senderName, legislatorNames) {
+  const names = Array.isArray(legislatorNames)
+    ? legislatorNames
+    : legislatorNames ? [legislatorNames] : [legislators.assembly?.name, legislators.senate?.name].filter(Boolean);
+  const greeting = names.length === 0
+    ? 'Dear Legislator,'
+    : names.length === 1
+      ? `Dear ${names[0]},`
+      : `Dear ${names.join(' and ')},`;
+
+  return `${greeting}
 
 My name is ${senderName}, and I am a constituent writing to urge you to support dedicated state funding for childhood literacy programs in the New York State Budget — specifically for Reach Out and Read of Greater New York and Dolly Parton's Imagination Library.
 
@@ -1111,10 +1120,10 @@ function buildEmailPreview() {
   const lastName  = document.getElementById('last-name').value  || 'Name';
   const senderName = `${firstName} ${lastName}`.trim();
 
-  const recipients = [legislators.assembly, legislators.senate].filter(Boolean).map(l => l.name).join(' and ');
-  document.getElementById('recipient-preview').textContent = `To: ${recipients}`;
+  const legNames = [legislators.assembly, legislators.senate].filter(Boolean).map(l => l.name);
+  document.getElementById('recipient-preview').textContent = `To: ${legNames.join(' and ')}`;
 
-  const body = buildEmailBody(senderName);
+  const body = buildEmailBody(senderName, legNames);
   document.getElementById('email-body-preview').textContent = body;
   document.getElementById('email-preview').style.display = 'block';
 }
@@ -1176,14 +1185,15 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
   showStatus('send-status', '', '');
 
   const senderName  = `${firstName} ${lastName}`;
-  const emailBody   = buildEmailBody(senderName);
+  const legNames    = [legislators.assembly?.name, legislators.senate?.name].filter(Boolean);
+  const emailBody   = buildEmailBody(senderName, legNames);
   let recipients    = [legislators.assembly?.email, legislators.senate?.email].filter(Boolean).join(', ');
-  let legNames      = [legislators.assembly?.name, legislators.senate?.name].filter(Boolean).join(' and ');
+  let legNamesStr   = legNames.join(' and ');
 
   // Test mode: add ?test=1 to URL and set CONFIG.TEST_EMAIL to send to yourself instead of legislators
   if (window.location.search.includes('test=1') && CONFIG.TEST_EMAIL) {
     recipients = CONFIG.TEST_EMAIL;
-    legNames = 'Test Recipient';
+    legNamesStr = 'Test Recipient';
     console.log('[Step 3] Email – test mode: sending to', CONFIG.TEST_EMAIL, 'instead of legislators');
   } else {
     console.log('[Step 3] Email – sending to legislators:', recipients);
@@ -1193,7 +1203,7 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
   if (CONFIG.EMAILJS_SERVICE_ID === 'YOUR_SERVICE_ID') {
     // DEMO: simulate send
     await new Promise(r => setTimeout(r, 1200));
-    logAction(senderName, email, legNames);
+    logAction(senderName, email, legNamesStr);
     showSuccessScreen(senderName);
     return;
   }
@@ -1201,16 +1211,16 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
   try {
     await emailjs.send(CONFIG.EMAILJS_SERVICE_ID, CONFIG.EMAILJS_TEMPLATE_ID, {
       to_email:          recipients,
-      to_name:           legNames,
+      to_name:           legNamesStr,
       from_name:         senderName,
       from_email:        email,
       message:           emailBody,
-      legislator_names:  legNames,
+      legislator_names:  legNamesStr,
       reply_to:          email,
     });
 
     if (window.location.search.includes('test=1')) console.log('[Step 3] Email – sent successfully to', recipients);
-    logAction(senderName, email, legNames);
+    logAction(senderName, email, legNamesStr);
     showSuccessScreen(senderName);
 
   } catch(err) {

@@ -60,8 +60,10 @@ A constituent has sent you a message via Reach Out and Read advocacy:
 {{message}}
 ```
 
-5. **Save** the template
-6. Copy the **Template ID** (e.g. `template_xyz789`) – this becomes `EMAILJS_TEMPLATE_ID` in `index.html`
+5. **Remove EmailJS footer** – In the template editor, scroll down and turn off any "Footer" or "Signature" option that adds "Email sent via EmailJS.com". If present, delete that text from the template.
+
+6. **Save** the template
+7. Copy the **Template ID** (e.g. `template_xyz789`) – this becomes `EMAILJS_TEMPLATE_ID` in `index.html`
 
 ---
 
