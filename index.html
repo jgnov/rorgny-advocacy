@@ -738,6 +738,7 @@
         <div class="email-preview" id="email-preview" style="display:none">
           <div class="email-preview-label">📧 Email that will be sent</div>
           <span id="recipient-preview"></span>
+          <div id="recipient-emails-verify" style="display:none; margin-top:8px; font-size:13px; opacity:0.9;"></div>
           <div class="email-preview-text" id="email-body-preview"></div>
         </div>
 
@@ -1021,10 +1022,14 @@ async function lookupLegislators() {
 
       if (org === 'lower' && !legislators.assembly) {
         const email = p.email || (p.offices?.[0]?.email) || deriveEmail(p.name, true);
+        const source = p.email ? 'API' : (p.offices?.[0]?.email ? 'office' : 'derived');
+        if (debug) console.log('[Step 2] Assembly', p.name, '→', email, '(' + source + ')');
         legislators.assembly = { name: p.name, role: 'NY State Assembly', email };
       }
       if (org === 'upper' && !legislators.senate) {
         const email = p.email || (p.offices?.[0]?.email) || deriveEmail(p.name, false);
+        const source = p.email ? 'API' : (p.offices?.[0]?.email ? 'office' : 'derived');
+        if (debug) console.log('[Step 2] Senate', p.name, '→', email, '(' + source + ')');
         legislators.senate = { name: p.name, role: 'NY State Senate', email };
       }
     }
@@ -1120,8 +1125,19 @@ function buildEmailPreview() {
   const lastName  = document.getElementById('last-name').value  || 'Name';
   const senderName = `${firstName} ${lastName}`.trim();
 
-  const legNames = [legislators.assembly, legislators.senate].filter(Boolean).map(l => l.name);
+  const legs = [legislators.assembly, legislators.senate].filter(Boolean);
+  const legNames = legs.map(l => l.name);
   document.getElementById('recipient-preview').textContent = `To: ${legNames.join(' and ')}`;
+
+  // In test mode, show actual email addresses so you can verify against official sites
+  const verifyEl = document.getElementById('recipient-emails-verify');
+  if (window.location.search.includes('test=1') && legs.length > 0) {
+    verifyEl.style.display = 'block';
+    const emails = legs.map(l => `${l.name}: ${l.email}`).join(' | ');
+    verifyEl.innerHTML = `Addresses: ${emails} — <a href="https://assembly.state.ny.us/mem/" target="_blank" rel="noopener">Verify Assembly</a> · <a href="https://www.nysenate.gov/senators-committees" target="_blank" rel="noopener">Verify Senate</a>`;
+  } else {
+    verifyEl.style.display = 'none';
+  }
 
   const body = buildEmailBody(senderName, legNames);
   document.getElementById('email-body-preview').textContent = body;
