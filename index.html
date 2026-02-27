@@ -681,6 +681,7 @@
       <div id="test-mode-banner" class="status-msg" style="display:none; margin-bottom:16px; background:rgba(245,166,35,0.2); border-color:rgba(245,166,35,0.5); color:#FCD34D;">
         &#9888; Test mode: emails will be sent to your test address, not legislators.
       </div>
+      <div id="config-status-banner" class="status-msg" style="display:none; margin-bottom:16px; font-size:14px;"></div>
       <p class="section-label">Take Action</p>
       <h2 class="section-heading">Send your message to Albany</h2>
       <p class="section-body">
@@ -855,9 +856,29 @@ let verifiedAddressDisplay = null;  // normalized address string for confirmatio
 
 // Show test mode banner when ?test=1 and TEST_EMAIL is set
 (function(){
-  if (window.location.search.includes('test=1') && CONFIG.TEST_EMAIL) {
-    const el = document.getElementById('test-mode-banner');
-    if (el) el.style.display = 'block';
+  if (window.location.search.includes('test=1')) {
+    if (CONFIG.TEST_EMAIL) {
+      const el = document.getElementById('test-mode-banner');
+      if (el) el.style.display = 'block';
+    }
+    // Config status: show if Open States key is missing/placeholder (helps debug deploy issues)
+    const key = CONFIG.OPEN_STATES_API_KEY || '';
+    const isPlaceholder = !key || key.includes('YOUR_') || key.startsWith('__');
+    const statusEl = document.getElementById('config-status-banner');
+    if (statusEl) {
+      statusEl.style.display = 'block';
+      if (isPlaceholder) {
+        statusEl.style.background = 'rgba(220,38,38,0.2)';
+        statusEl.style.borderColor = 'rgba(220,38,38,0.5)';
+        statusEl.style.color = '#fca5a5';
+        statusEl.innerHTML = '&#9888; Open States API key not configured. Legislator lookup will fail. If this is the live site, set Pages source to <strong>GitHub Actions</strong> in repo Settings → Pages, and ensure <code>OPEN_STATES_API_KEY</code> is in repo Secrets.';
+      } else {
+        statusEl.style.background = 'rgba(34,197,94,0.2)';
+        statusEl.style.borderColor = 'rgba(34,197,94,0.5)';
+        statusEl.style.color = '#86efac';
+        statusEl.innerHTML = '&#9989; Open States API key is configured.';
+      }
+    }
   }
 })();
 
