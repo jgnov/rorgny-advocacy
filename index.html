@@ -445,17 +445,16 @@
     .legislator-section {
       display: flex;
       gap: 20px;
-      align-items: flex-start;
+      align-items: center;
       margin-top: 10px;
     }
     .legislator-label {
       font-size: 13px;
-      color: rgba(255,255,255,0.7);
+      color: var(--ror-green);
       line-height: 1.4;
       flex-shrink: 0;
       width: 200px;
       margin: 0;
-      padding-top: 4px;
     }
     #legislator-area {
       flex: 1;
@@ -743,8 +742,8 @@
         </div>
 
         <!-- Legislator display area -->
-        <div class="legislator-section">
-          <p class="legislator-label">Your representatives who will be contacted when you click "Send email to Albany"</p>
+        <div class="legislator-section" id="legislator-section" style="display:none">
+          <p class="legislator-label">Your representatives who will be contacted when you click "Send email to Albany":</p>
           <div id="legislator-area"></div>
         </div>
         <div class="status-msg" id="lookup-status"></div>
@@ -930,6 +929,7 @@ function clearAddressVerification() {
   verifiedAddressDisplay = null;
   legislators = { assembly: null, senate: null };
   document.getElementById('address-confirmed').style.display = 'none';
+  document.getElementById('legislator-section').style.display = 'none';
   document.getElementById('legislator-area').innerHTML = '';
   document.getElementById('email-preview').style.display = 'none';
   document.getElementById('send-btn').disabled = true;
@@ -976,6 +976,7 @@ async function lookupLegislators() {
   verifyBtn.disabled = true;
   showStatus('lookup-status', 'loading', '<span class="spinner"></span> Verifying address and looking up your representatives…');
   document.getElementById('address-confirmed').style.display = 'none';
+  document.getElementById('legislator-section').style.display = 'none';
   document.getElementById('legislator-area').innerHTML = '';
   document.getElementById('email-preview').style.display = 'none';
   document.getElementById('send-btn').disabled = true;
@@ -1099,6 +1100,9 @@ function renderLegislators() {
   area.innerHTML = '';
 
   const found = [legislators.assembly, legislators.senate].filter(Boolean);
+  if (found.length > 0) {
+    document.getElementById('legislator-section').style.display = 'flex';
+  }
   found.forEach(leg => {
     const card = document.createElement('div');
     card.className = 'legislator-found';
