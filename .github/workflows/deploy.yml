@@ -2,6 +2,7 @@
 # Add these secrets in repo Settings > Secrets:
 #   OPEN_STATES_API_KEY, EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID
 #   EMAILJS_ADMIN_TEMPLATE_ID (optional, admin email alert on each send)
+#   EMAILJS_BCC_EMAIL (optional, BCC yourself a copy of every advocacy email)
 #   SUPABASE_URL, SUPABASE_ANON_KEY (optional, for admin panel)
 # Set Pages source to "GitHub Actions" in Settings > Pages
 
@@ -40,6 +41,7 @@ jobs:
           echo "EMAILJS_SERVICE_ID=${{ secrets.EMAILJS_SERVICE_ID }}" >> .env
           echo "EMAILJS_TEMPLATE_ID=${{ secrets.EMAILJS_TEMPLATE_ID }}" >> .env
           echo "EMAILJS_ADMIN_TEMPLATE_ID=${{ secrets.EMAILJS_ADMIN_TEMPLATE_ID }}" >> .env
+          echo "EMAILJS_BCC_EMAIL=${{ secrets.EMAILJS_BCC_EMAIL }}" >> .env
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
 

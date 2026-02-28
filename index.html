@@ -814,6 +814,7 @@ const CONFIG = {
   EMAILJS_SERVICE_ID:       '__EMAILJS_SERVICE_ID__',   // Injected by build from .env
   EMAILJS_TEMPLATE_ID:      '__EMAILJS_TEMPLATE_ID__',  // Injected by build from .env
   EMAILJS_ADMIN_TEMPLATE_ID:'__EMAILJS_ADMIN_TEMPLATE_ID__', // Optional: admin notification when someone sends
+  EMAILJS_BCC_EMAIL:        '__EMAILJS_BCC_EMAIL__',     // Optional: BCC yourself a copy of every advocacy email
   OPEN_STATES_API_KEY:      '__OPEN_STATES_API_KEY__',  // Injected by build from .env
   SUPABASE_URL:             '__SUPABASE_URL__',        // Injected by build from .env
   SUPABASE_ANON_KEY:        '__SUPABASE_ANON_KEY__',   // Injected by build from .env
@@ -1202,7 +1203,7 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
   }
 
   try {
-    await emailjs.send(CONFIG.EMAILJS_SERVICE_ID, CONFIG.EMAILJS_TEMPLATE_ID, {
+    const templateParams = {
       to_email:          recipients,
       to_name:           legNamesStr,
       from_name:         senderName,
@@ -1210,7 +1211,9 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
       message:           emailBody,
       legislator_names:  legNamesStr,
       reply_to:          email,
-    });
+    };
+    if (CONFIG.EMAILJS_BCC_EMAIL) templateParams.bcc_email = CONFIG.EMAILJS_BCC_EMAIL;
+    await emailjs.send(CONFIG.EMAILJS_SERVICE_ID, CONFIG.EMAILJS_TEMPLATE_ID, templateParams);
 
     if (window.location.search.includes('test=1')) console.log('[Step 3] Email – sent successfully to', recipients);
     logAction(senderName, email, legNamesStr, recipients);

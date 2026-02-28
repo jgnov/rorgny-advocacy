@@ -13,6 +13,7 @@ The site already has the EmailJS SDK integrated and sends these template paramet
 - `message` – full advocacy email body
 - `legislator_names` – same as `to_name`
 - `reply_to` – sender email (so legislators can reply directly to the constituent)
+- `bcc_email` – (optional) your email to BCC a copy of every advocacy email
 
 ---
 
@@ -51,6 +52,7 @@ The site already has the EmailJS SDK integrated and sends these template paramet
 | **From Name** | `{{from_name}}` |
 | **From Email** | Use the "default email" option or `{{from_email}}` |
 | **Reply-To** | `{{reply_to}}` |
+| **Bcc** | `{{bcc_email}}` (optional – add your email to .env as EMAILJS_BCC_EMAIL) |
 
 4. **Content** – set the email body:
 
@@ -92,6 +94,16 @@ Date: {{date}}
 Add to `.env` and GitHub Secrets: `EMAILJS_ADMIN_TEMPLATE_ID=template_abc123`
 
 **Important:** If notifications don't arrive, ensure `EMAILJS_ADMIN_TEMPLATE_ID` is set in GitHub Secrets (repo Settings → Secrets). The site sends the main email first, then your notification ~1.2 seconds later to avoid EmailJS rate limits. Check the browser console (F12) for errors if it still fails.
+
+---
+
+## Step 3c (Optional): BCC Yourself a Copy of Each Advocacy Email
+
+Get a BCC copy of every email sent to legislators (so you can verify delivery and keep a record).
+
+1. In your main advocacy **Email Template**, add the **Bcc** field and set it to `{{bcc_email}}`
+2. Add to `.env`: `EMAILJS_BCC_EMAIL=your@email.com`
+3. Add to **GitHub Secrets** (repo → Settings → Secrets → Actions): `EMAILJS_BCC_EMAIL` = your email
 
 ---
 
