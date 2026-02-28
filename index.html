@@ -1215,14 +1215,23 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
     if (window.location.search.includes('test=1')) console.log('[Step 3] Email – sent successfully to', recipients);
     logAction(senderName, email, legNamesStr, recipients);
     // Optional: email admin when someone sends (uses same EmailJS service, different template)
-    if (CONFIG.EMAILJS_ADMIN_TEMPLATE_ID) {
-      emailjs.send(CONFIG.EMAILJS_SERVICE_ID, CONFIG.EMAILJS_ADMIN_TEMPLATE_ID, {
-        sender_name:       senderName,
-        sender_email:      email,
-        legislators:       legNamesStr,
-        recipient_emails:  recipients,
-        date:              new Date().toLocaleString(),
-      }).then(() => {}, () => {});
+    const adminTemplateId = (CONFIG.EMAILJS_ADMIN_TEMPLATE_ID || '').trim();
+    if (adminTemplateId && !adminTemplateId.startsWith('__')) {
+      // Delay ~1.2s to avoid EmailJS rate limit (free tier: ~1 req/sec)
+      setTimeout(() => {
+        emailjs.send(CONFIG.EMAILJS_SERVICE_ID, adminTemplateId, {
+          sender_name:       senderName,
+          sender_email:      email,
+          legislators:       legNamesStr,
+          recipient_emails:  recipients,
+          date:              new Date().toLocaleString(),
+        }).then(
+          () => { if (window.location.search.includes('test=1')) console.log('[Step 3] Admin notification – sent'); },
+          (err) => { console.error('[Step 3] Admin notification – failed:', err?.text || err?.message || err); }
+        );
+      }, 1200);
+    } else if (window.location.search.includes('test=1') && !adminTemplateId) {
+      console.log('[Step 3] Admin notification – skipped (EMAILJS_ADMIN_TEMPLATE_ID not set)');
     }
     showSuccessScreen(senderName);
 

@@ -91,6 +91,8 @@ Date: {{date}}
 
 Add to `.env` and GitHub Secrets: `EMAILJS_ADMIN_TEMPLATE_ID=template_abc123`
 
+**Important:** If notifications don't arrive, ensure `EMAILJS_ADMIN_TEMPLATE_ID` is set in GitHub Secrets (repo Settings → Secrets). The site sends the main email first, then your notification ~1.2 seconds later to avoid EmailJS rate limits. Check the browser console (F12) for errors if it still fails.
+
 ---
 
 ## Step 4: Update Your Site's CONFIG
