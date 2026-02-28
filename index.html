@@ -441,6 +441,27 @@
       flex-shrink: 0;
     }
 
+    /* ── LEGISLATOR SECTION ── */
+    .legislator-section {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      margin-top: 10px;
+    }
+    .legislator-label {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.4;
+      flex-shrink: 0;
+      width: 200px;
+      margin: 0;
+      padding-top: 4px;
+    }
+    #legislator-area {
+      flex: 1;
+      min-width: 0;
+      max-width: 340px;
+    }
     /* ── LEGISLATOR CARD ── */
     .legislator-found {
       display: flex;
@@ -609,6 +630,9 @@
       .hero-stats .stat-num { font-size: 24px; }
       .hero-stats .stat-label { font-size: 10px; max-width: none; }
       .nav-logo-img { height: 80px; max-width: 300px; }
+      .legislator-section { flex-direction: column; gap: 12px; }
+      .legislator-label { width: 100%; }
+      #legislator-area { max-width: none; }
     }
 
     .spinner {
@@ -674,7 +698,7 @@
       <p class="section-label">Take Action</p>
       <h2 class="section-heading">Send your message to Albany</h2>
       <p class="section-body">
-        Enter your information below. We'll find your Assembly Member and State Senator, and send them a pre-written email on your behalf — in two clicks.
+        Enter your information below. We'll find your Assembly Member and State Senator, and we'll send them a pre-written email on your behalf — in two clicks.
       </p>
 
       <form id="advocacy-form" novalidate>
@@ -719,7 +743,10 @@
         </div>
 
         <!-- Legislator display area -->
-        <div id="legislator-area"></div>
+        <div class="legislator-section">
+          <p class="legislator-label">Your representatives who will be contacted when you click "Send email to Albany"</p>
+          <div id="legislator-area"></div>
+        </div>
         <div class="status-msg" id="lookup-status"></div>
 
         <!-- Email preview -->
