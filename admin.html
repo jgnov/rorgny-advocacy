@@ -216,6 +216,9 @@
     SUPABASE_ANON_KEY: '__SUPABASE_ANON_KEY__',
   };
 
+  /** Must match admin-sends whitelist and sends.site_tag for this property */
+  const SITE_TAG = 'state2026';
+
   const SESSION_KEY = 'ror_admin';
   const SESSION_PW_KEY = 'ror_admin_pw';
 
@@ -288,7 +291,7 @@
             'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON_KEY,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ password }),
+          body: JSON.stringify({ password, siteTag: SITE_TAG }),
         });
         if (res.ok) {
           return await res.json();

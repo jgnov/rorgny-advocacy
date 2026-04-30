@@ -2,14 +2,22 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
+const ALLOWED_SITE_TAGS = ["state2026", "city2026"] as const;
+type SiteTag = (typeof ALLOWED_SITE_TAGS)[number];
+
+function isSiteTag(s: string): s is SiteTag {
+  return (ALLOWED_SITE_TAGS as readonly string[]).includes(s);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { password } = await req.json();
-    const pw = (typeof password === "string" ? password : "").trim();
+    const body = await req.json();
+    const pw = (typeof body.password === "string" ? body.password : "").trim();
+    const siteTagRaw = (typeof body.siteTag === "string" ? body.siteTag : "").trim();
     const adminSecret = Deno.env.get("ADMIN_SECRET")?.trim();
 
     if (!adminSecret) {
@@ -22,6 +30,13 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
+    if (!isSiteTag(siteTagRaw)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid or missing siteTag" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
 
@@ -38,6 +53,7 @@ Deno.serve(async (req) => {
     const { data, error } = await supabase
       .from("sends")
       .select("*")
+      .eq("site_tag", siteTagRaw)
       .order("ts", { ascending: false });
 
     if (error) {

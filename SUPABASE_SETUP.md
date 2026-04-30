@@ -45,6 +45,22 @@ drop policy if exists "Allow anonymous select" on public.sends;
 alter table public.sends add column if not exists recipient_emails text;
 ```
 
+**Add `site_tag`** (separates RORGNY state advocacy vs NYC council site in one database). Run in **SQL Editor** (or apply [`supabase/migrations/20260430120000_add_site_tag.sql`](supabase/migrations/20260430120000_add_site_tag.sql)):
+
+```sql
+alter table public.sends
+  add column if not exists site_tag text not null default 'state2026';
+
+alter table public.sends
+  drop constraint if exists sends_site_tag_allowed;
+
+alter table public.sends
+  add constraint sends_site_tag_allowed
+  check (site_tag in ('state2026', 'city2026'));
+```
+
+Inserts from the main site use `state2026`; the city council property uses `city2026`. The `admin-sends` Edge Function requires JSON `{ "password": "...", "siteTag": "state2026" }` or `"city2026"` and returns only rows for that tag.
+
 ## Step 3: Deploy the Admin Edge Function
 
 The admin panel fetches data through an Edge Function that validates your password on the server. The password is never sent to the browser.

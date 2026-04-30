@@ -1311,7 +1311,7 @@ document.getElementById('advocacy-form').addEventListener('submit', async functi
 // TRACKING (localStorage + Supabase)
 // ─────────────────────────────────────────────
 function logAction(name, email, legislators, recipientEmails) {
-  const row = { name, email, legislators, recipient_emails: recipientEmails || '', ts: new Date().toISOString() };
+  const row = { name, email, legislators, recipient_emails: recipientEmails || '', site_tag: 'state2026', ts: new Date().toISOString() };
   try {
     const log = JSON.parse(localStorage.getItem('ror_sends') || '[]');
     log.push(row);
