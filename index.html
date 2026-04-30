@@ -925,6 +925,35 @@ function getAddress() {
   return `${street}, ${city}, NY ${zip}`;
 }
 
+/** Human-readable line for “Address verified” — Photon often splits housenumber vs street */
+function buildVerifiedAddressLine(userStreetLine, props, fallbackFullAddress) {
+  const p = props || {};
+  const hn = String(p.housenumber || '').trim();
+  const st = String(p.street || '').trim();
+  let streetSeg = '';
+  if (hn && st) {
+    streetSeg = `${hn} ${st}`.trim();
+  } else {
+    const name = String(p.name || '').trim();
+    const user = String(userStreetLine || '').trim();
+    const norm = s => s.replace(/\s+/g, ' ').trim().toLowerCase();
+    const nameLooksLikeStreet = name && (/\d/.test(name) || norm(name) === norm(user) || norm(name).includes(norm(user)));
+    if (nameLooksLikeStreet) streetSeg = name;
+    else if (user) streetSeg = user;
+    else if (st) streetSeg = st;
+    else if (name) streetSeg = name;
+  }
+  const city = String(p.city || p.locality || '').trim();
+  const pc = String(p.postcode || '').replace(/\D/g, '').slice(0, 5);
+  const parts = [];
+  if (streetSeg) parts.push(streetSeg);
+  if (city) parts.push(city);
+  if (pc) parts.push(`NY ${pc}`);
+  else parts.push('NY');
+  const line = parts.filter(Boolean).join(', ');
+  return line || String(fallbackFullAddress || '').trim() || '';
+}
+
 function clearAddressVerification() {
   verifiedAddressDisplay = null;
   legislators = { assembly: null, senate: null };
@@ -1020,8 +1049,9 @@ async function lookupLegislators() {
     }
 
     legislators = { assembly: null, senate: null };
-    const parts = [props.street, props.city || props.locality, props.postcode ? `NY ${props.postcode}` : 'NY'].filter(Boolean);
-    verifiedAddressDisplay = parts.length ? parts.join(', ') : address;
+    const userStreet = document.getElementById('street-address').value.trim();
+    verifiedAddressDisplay = buildVerifiedAddressLine(userStreet, props, address);
+    if (debug) console.log('[Verified address line]', verifiedAddressDisplay);
 
     // Step 2: Open States people.geo – lat/lng → legislators
     // Use apikey query param (more reliable from browser than header)
